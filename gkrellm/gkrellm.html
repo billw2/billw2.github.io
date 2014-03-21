@@ -1,1 +1,477 @@
-Hello World
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
+<html>
+<head>
+
+	
+  <title>GKrellM</title>
+  <link rel="SHORTCUT ICON" href="http://members.dslextreme.com/~billw/gkrellm/favicon.ico">
+</head>
+
+
+<body background="paper1.gif">
+
+
+<center>
+<img src="gkrellm-title.gif" alt="GKrellM" align="top" border="0">
+</center>
+
+
+<hr size="2" width="100%">
+
+<table>
+
+  <tbody>
+    <tr>
+
+	<td>
+		
+      <p>
+		<a href="http://www.muhri.net" name="www.muhri.net">Theme site</a> <br>
+
+		<a href="Themes.html" name="Themes.html">Themes_Doc</a> <br>
+
+		<a href="Plugins.html" name="Plugins.html">Plugins</a><br>
+
+		<a href="FAQ.html" name="FAQ.html">FAQ</a><br>
+
+		<a href="Bugs.html" name="Bugs.html">Bugs </a><br>
+
+	</p>
+      </td>
+
+	<td>
+		
+      <blockquote>
+		GKrellM is a single process stack of system monitors which supports
+		applying themes to match its appearance to your window
+		manager, Gtk, or any other theme.
+		
+        <p>
+		To subscribe/unsubscribe to the GKrellM mailing list
+		or to read the list archives go to
+		<a href="http://archive.lists.netservicesgroup.com"
+		name="http://archive.lists.netservicesgroup.com">
+		http://archive.lists.netservicesgroup.com. </a> <br>
+
+		The archive is for the lists.netservicesgroup.com list only
+		but there is another archive site for the older gkrellm
+		mailing list messages at
+		<a href="http://news.gmane.org/gmane.comp.gnome.apps.gkrellm"
+		name="http://news.gmane.org/gmane.comp.gnome.apps.gkrellm">
+		gmane. </a>
+		</p>
+      </blockquote>
+
+	</td>
+
+  </tr>
+
+  </tbody>
+</table>
+
+
+<hr>
+
+<table>
+
+	<tbody>
+    <tr>
+
+		<td>
+		<img src="gkrellm.png" alt="gkrellm.png" align="top" border="0"><br>
+ 
+      <center>1</center>
+
+		</td>
+
+		<td>
+		<img src="gkrellm0.png" alt="gkrellm0.png" align="top" border="0"><br>
+ 
+      <center>2</center>
+
+		</td>
+
+
+		<td>
+      <blockquote>
+        <h3>Builtin Features</h3>
+
+        <ul>
+
+          <li>Hostname/systemname display.
+          </li>
+
+          <li>Clock/calendar.
+          </li>
+
+          <li>SMP CPU monitor that can chart individual CPUs and/or a composite CPU.
+          </li>
+
+          <li>Temperature, fan, and voltage sensor monitors if supported by the
+	kernel and the mainboard hardware.
+	Linux requires lm_sensors modules, sysfs sensors for kernels &gt;= 2.6.0
+	or a running mbmon daemon.  Sensors can also be read from mbmon on
+	FreeBSD.  On Linux, you can also monitor disk temperatures from the
+	hddtemp daemon and nvidia GPU temperatures if nvidia-settings is
+	installed.<br>
+
+	Each sensor monitor has a configurable alarm and warning.
+          </li>
+
+          <li>Process monitor with a chart for load and forks and a display of number
+	of current processes and users.
+          </li>
+
+          <li>Disk monitor that can chart individual disks or a composite disk.
+          </li>
+
+          <li>Internet monitor (http, ftp, ...) that displays current tcp port
+	connections and charts historical port hits for over two days.
+          </li>
+
+          <li>Net interface monitors with charts for all routed net interfaces.
+	Data rx/tx LEDs and a timer button that can
+	be linked to a ppp or isdn net interface and displays on line time.
+          </li>
+
+          <li>Memory and swap space usage meters, and a swap page in/out chart.
+          </li>
+
+          <li>File system meters which show capacity/free space and can mount/umount.
+          </li>
+
+          <li>A mailbox monitor which can launch a mail reader, a mail fetch/check
+	program, and a sound notify command.  Builtin new mail message checking
+	for mbox, maildir, MH, POP3, and IMAP mailboxes.
+          </li>
+
+          <li>APM laptop battery meter with a configurable alarm and warning for
+	low battery time left.
+          </li>
+
+          <li>Uptime display.
+          </li>
+
+
+          <br>
+
+          <li>Multiple monitors managed by a single process to reduce system load.</li>
+
+          <li>Charts have auto scaling or fixed scaling modes.</li>
+
+          <li>Commands can be configured to run when monitor labels are clicked.</li>
+
+          <li>gkrellm can run in client mode and collect data from a gkrellmd
+	server running on a remote machine.</li>
+
+          <li>Both gkrellm and the gkrellmd server are plugin capable so special
+	interest monitors can be coded.</li>
+
+        </ul>
+
+
+        <p>
+        </p>
+        <h3>Screenshots:</h3>
+
+	
+        <ul>
+
+		
+          <dl>
+1: The CPU chart's nice time (green) is de-emphasized
+		by splitting it into a small view, and the sys time is inverted.
+		The disk hda chart is split at the 50% point.
+		The 5 volt supply is triggering a warning.  The animated penguin is
+		announcing there is new mail.
+		<br>
+
+		Three audio plugins are shown enabled:
+		GKrellMSS sound scope, Volume, and GKrellMMS .  See the plugins
+		page for these and many more interesting plugins.
+		
+          </dl>
+          <br>
+
+		
+          <dl>
+2: A more simple configuration with nice time hidden and
+		two net interfaces being monitored. The battery time left
+		is triggering an alarm.  The theme is one I put together as a test
+		and demo for the new frame overlap features for 2.1.x.  So if you
+		run 2.1.x and like it or want hints on using the new features
+		in making your own theme, here's the
+		<a href="gkrellm-hardware.tar.gz" name="hardware theme">
+		hardware theme.</a>
+		And if you're wondering why I call it
+		"hardware", it's because it has an alternative that looks like
+		<a href="gkrellm2.png" name="this"> this.</a>
+
+		
+          </dl>
+
+        </ul>
+      </blockquote>
+
+		</td>
+
+	</tr>
+
+  </tbody>
+</table>
+
+
+
+  
+<h3>Links</h3>
+
+  
+<blockquote>
+	Here's some instructional or unusually interesting links about GKrellM:
+	
+  <ul>
+
+		<li>
+		Joe Barr's introduction to GKrellM
+		<a href="http://www.newsforge.com/article.pl?sid=03/10/28/1355235" name="NewsForge story."> NewsForge story. </a>
+		</li>
+
+		<li>Mike Edwards wrote a
+		<a href="http://php-gkrellm.sourceforge.net/"
+			name="PHP library"> PHP library </a> useful for PHP developers
+			who want to get information out of a gkrellmd server.
+		</li>
+
+		<li> William Stearns'
+		<a href="http://www.stearns.org/doc/network-monitoring.v0.1.1.html" name="gkrellmd over SSH tutorial"> gkrellmd over SSH tutorial. </a>
+		</li>
+
+		<li>Tom Newsom demonstrates setting up
+		<a href="http://www.slackdown.co.uk/my-desktop.html" name="multiple gkrellm configs"> multiple gkrellm configs. </a>
+		</li>
+
+		<li> Christopher Carey shows how you can even
+		<a href="http://chriscarey.com/software/tivo/" name="monitor a TiVo with gkrellmd">
+		monitor a TiVo with gkrellmd. </a>
+		</li>
+
+		<li> Christopher Blunck has a 
+		<a href="http://www.swcomplete.com/nslu2/gkrellm/index.html" name="Monitor your Linksys NSLU2 with GKrellM">
+		Monitor your Linksys NSLU2 with GKrellM </a>
+		page where he has
+		done a glib 2.2 and gkrellmd port for the NSLU2.
+		</li>
+
+		<li>
+		And Bryson Borg has done a similar gkrellmd port for a
+		<a href="http://chriscarey.com/software/gkrellm/wrt54g/" name="firmware modified Linksys WRT54G router.">
+		firmware modified Linksys WRT54G router. </a>
+		</li>
+
+	
+  </ul>
+
+  </blockquote>
+
+
+
+  
+<h3>System Requirements</h3>
+
+  
+<blockquote>
+  GKrellM requires <b>gtk 2.0, gdk 2.0, glib 2.0 </b>
+	
+  <blockquote>
+	The gkrellmd server requires only glib
+	(either <b>glib 2.0</b> or <b>glib 1.2</b>)
+	and may be installed on servers that do not have GTK or Xlibs.  See
+	the INSTALL file.
+	</blockquote>
+
+
+  
+  <ul>
+
+  <li><b>Linux: </b> data is read from the /proc filesystem. </li>
+
+  <li><b>FreeBSD: </b> a version may be compiled using code contributed by
+	<a href="mailto:ume--at--mahoroba.org">Hajimu UMEMOTO</a> </li>
+
+
+  <li><b>Mac OS X: </b> a version may be compiled using code contributed by
+		<a href="mailto:bhines--at--alumni.ucsd.edu"> Ben Hines </a><br>
+
+		It's not required, but take a look at the
+		<a href="http://fink.sourceforge.net/index.php" name="http://fink.sourceforge.net/index.php"> Fink project </a> and
+		<a href="http://www.lb.shuttle.de/apastron/unixmons.htm" name="http://www.lb.shuttle.de/apastron/unixmons.htm">
+		Stefan Urbat's page. </a> </li>
+
+
+
+  <li><b>NetBSD / OpenBSD:</b>
+	a version may be compiled using code contributed
+	by <a href="mailto:metall--at--ficus.yi.org">Anthony Mallet</a> </li>
+
+
+  <li><b>Solaris: </b> a version may be compiled using code contributed by
+	<a href="mailto:dxy--at--acm.org">Daisuke Yabuki</a>
+			&nbsp; He also has a 
+			<a href="http://www.optix.org/%7Edxy/solaris/gkrellm/" name="Solaris GKrellM site"> Solaris GKrellM site. </a> </li>
+
+  <li> <b>Windows: </b> 
+		A GKrellM that runs on Windows is provided by
+			<a href="mailto:mETz81--at--web.de"> Stefan Gehn </a>
+		at
+			<a href="http://www.srcbox.net/projects/gkrellm/"
+			name="http://www.srcbox.net/projects/gkrellm/">
+			his site. </a> </li>
+
+    </ul>
+</blockquote>
+
+  
+
+  
+<h3>GKrellM 2.3.5</h3>
+
+	
+<ul>
+
+	
+  <dl>
+    <a href="Changelog" name="Changelog">Changelog</a> 
+  </dl>
+
+
+  <dl>
+ <a href="gkrellm-2.3.5.tar.bz2" name="gkrellm-2.3.5.tar.bz2">
+			gkrellm-2.3.5.tar.bz2 </a> 
+  </dl>
+
+	
+  <dl>
+ <a href="gkrellm-2.3.5.tar.gz" name="gkrellm-2.3.5.tar.gz">
+			gkrellm-2.3.5.tar.gz </a> 
+  </dl>
+
+	
+</ul>
+
+	
+<blockquote>
+	You can find an archive of previous GKrellM versions at
+	<a href="ftp://ftp.FreeBSD.org/pub/FreeBSD/ports/local-distfiles/ume/" name="FreeBSD.org">
+            FreeBSD.org </a>
+	</blockquote>
+
+
+  
+<h3>Package Downloads</h3>
+
+  
+<blockquote>
+    
+  <h5>Debian</h5>
+  <ul>
+    <dl>
+      <a href="http://packages.debian.org/sid/gkrellm"
+			name="packages.debian.org/sid/gkrellm">
+			Debian </a>
+			from the unstable distribution.
+    </dl>
+  </ul>
+
+  <h5>Gentoo</h5>
+  <ul>
+    <dl>
+      <a href="http://packages.gentoo.org/package/app-admin/gkrellm"
+			name="http://packages.gentoo.org/package/app-admin/gkrellm">
+			Gentoo ebuild package.</a>
+    </dl>
+  </ul>
+    
+  <h5>FreeBSD</h5>
+  <ul>
+    <dl>
+			<a href="ftp://ftp.FreeBSD.org/pub/FreeBSD/ports/i386" name="FreeBSD packages of GKrellM"> Packages</a>
+			&nbsp; for different FreeBSD versions.
+			Look under packages-{version}/sysutils
+    </dl>
+  </ul>
+
+
+    
+  <h5>NetBSD</h5>
+  <ul>
+    <dl>
+      <a href="ftp://ftp.netbsd.org/pub/NetBSD/packages/pkgsrc/sysutils/gkrellm/README.html" name="NetBSD port of gkrellm"> Packages</a>
+			&nbsp; from sysutils/gkrellm
+	  
+    </dl>
+  </ul>
+
+
+    
+  <h5>OpenBSD</h5>
+  <ul>	
+    <dl>
+      <a href="http://www.openbsd.org/ports.html#Get" name="OpenBSD port of gkrellm"> Packages</a>
+			&nbsp; for the current OpenBSD release.
+    </dl>
+  </ul>
+
+  <h5>PC BSD</h5>
+  <ul>	
+    <dl>
+      <a href="http://pbidir.com/bt/pbi/52/gkrellm"> PBI (Push Button Installer)</a>
+			&nbsp; for PC-BSD Operating Systems.
+    </dl>
+  </ul>
+
+
+  <h5>Windows</h5>
+	<ul> 
+		<dl>
+			<a href="http://www.srcbox.net/projects/gkrellm/"
+			name="http://www.srcbox.net/projects/gkrellm/">
+			Download site</a> for exe installer.
+		</dl>
+	</ul>
+  </blockquote>
+
+
+<h3>Configuration</h3>
+
+<blockquote>
+A right mouse click on the side or top frames of the GKrellM
+window will pop up a menu for configuration.<br>
+
+Right click on charts to pop up a chart configuration.
+  <br>
+
+Configure your window manager to place GKrellM, make it sticky
+(see the FAQ), ... and enjoy.
+  <br>
+
+</blockquote>
+
+
+<hr>
+	
+<address>
+	
+<p align="center">
+	GKrellM is <b>free</b> software released under the GNU General Public License.<br>
+
+	Feel free to email me with questions or suggestions.<br>
+
+	Bill Wilson <a href="mailto:billw--at--gkrellm.net">billw--at--gkrellm.net</a><br>
+
+	</p>
+
+	</address>
+
+
+</body>
+</html>
