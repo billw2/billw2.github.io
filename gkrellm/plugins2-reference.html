@@ -1,0 +1,3333 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
+<html>
+<head>
+    <title>GKrellM 2.0 Plugin Programmers Reference</title>
+</head>
+
+<body background="paper1.gif">
+
+<h2 align=center>GKrellM 2.0 Plugin Programmers Reference</h2>
+
+<hr>
+<a href="plugins2-reference.html#DATA_ALLOC_FUNCTIONS">
+Data Allocation Functions</a><br>
+<a href="plugins2-reference.html#CHART_FUNCTIONS">
+GkrellmChart Functions</a><br>
+<a href="plugins2-reference.html#CHARTDATA_FUNCTIONS">
+GkrellmChartdata Functions</a><br>
+<a href="plugins2-reference.html#CHARTCONFIG_FUNCTIONS">
+GkrellmChartconfig Functions</a><br>
+<a href="plugins2-reference.html#PANEL_FUNCTIONS">
+GkrellmPanel Functions</a><br>
+<a href="plugins2-reference.html#KRELL_FUNCTIONS">
+GkrellmKrell Functions</a><br>
+<a href="plugins2-reference.html#DECAL_FUNCTIONS">
+GkrellmDecal Functions</a><br>
+<a href="plugins2-reference.html#DECALBUTTON_FUNCTIONS">
+GkrellmDecalbutton Functions</a><br>
+
+<a href="plugins2-reference.html#PIXOP_FUNCTIONS">
+GkrellmPiximage and GdkPixbuf Functions</a><br>
+
+<a href="plugins2-reference.html#MISC_FUNCTIONS">
+Misc Support Functions</a><br>
+<a href="plugins2-reference.html#ALERT_FUNCTIONS">
+GkrellmAlert Functions</a><br>
+
+
+<a href="plugins2-reference.html#STYLE_FUNCTIONS">
+GkrellmStyle and GkrellmTextstyle Functions</a><br>
+<a href="plugins2-reference.html#IMAGE_FUNCTIONS">
+Accessing GKrellM Piximages and Pixmaps Functions</a><br>
+<a href="plugins2-reference.html#GK_FUNCTIONS">
+Accessing GKrellM data</a><br>
+<a href="plugins2-reference.html#UTILITY_FUNCTIONS">
+Misc Utility Functions</a><br>
+<a href="plugins2-reference.html#GKRELLM_GTK_FUNCTIONS">
+gkrellm_gtk Functions</a><br>
+
+<a href="plugins2-reference.html#SERVER_FUNCTIONS">
+Client/Server Functions</a><br>
+
+
+<hr>
+
+<h4>GKrellM Plugins</h4>
+A GKrellM plugin is a shared object file (ends with a .so extension)
+which is placed in a plugin directory where GKrellM
+can find and load it at program startup time.
+Directories searched for plugins are:
+<pre>
+    ~/.gkrellm2/plugins/
+    /usr/local/lib/gkrellm2/plugins/
+    /usr/lib/gkrellm2/plugins/
+</pre>
+Users will probably install plugins into one of the first two directories
+while packages for a distribution will probably install under /usr/lib.
+<p>
+The one requirement of a plugin is that it must have a global function named
+gkrellm_init_plugin() which returns the address of an initialized GkrellmMonitor
+data structure.  A basic do nothing
+GKrellM plugin would look like this:
+<center><table width=80% border=1><tr><td bgcolor=#b0b0a8><pre>
+#include &lt;gkrellm2/gkrellm.h&gt;
+
+#define PLUGIN_PLACEMENT	MON_MAIL
+
+static void
+update_plugin()
+    {
+    /* See examples below */
+    }
+
+static void
+create_plugin(GtkWidget *vbox, gint first_create)
+    {
+    /* See examples below */
+    }
+
+static GkrellmMonitor  plugin_mon  =
+	{
+	"Demo",         /* Name, for config tab.        */
+	0,              /* Id,  0 if a plugin           */
+	create_plugin,  /* The create_plugin() function */
+	update_plugin,  /* The update_plugin() function */
+	NULL,           /* The create_plugin_tab() config function */
+	NULL,           /* The apply_plugin_config() function      */
+
+	NULL,           /* The save_plugin_config() function  */
+	NULL,           /* The load_plugin_config() function  */
+	"DemoA",        /* config keyword                     */
+
+	NULL,           /* Undefined 2  */
+	NULL,           /* Undefined 1  */
+	NULL,           /* Undefined 0  */
+
+	PLUGIN_PLACEMENT, /* Insert plugin before this monitor.       */
+	NULL,           /* Handle if a plugin, filled in by GKrellM */
+	NULL            /* path if a plugin, filled in by GKrellM   */
+	};
+
+GkrellmMonitor *
+gkrellm_init_plugin(void)
+	{
+	return &plugin_mon;
+	}
+</pre></td></tr></table></center>
+where the functions update_plugin() and create_plugin() refer to functions
+that will be used in example programs later in this document.
+The above define of PLUGIN_PLACEMENT as  MON_MAIL will cause the plugin to
+appear just above the
+mail monitor.  You could also choose MON_UPTIME, MON_APM, MON_FS, MON_MEM,
+MON_INET, MON_NET, MON_DISK, MON_PROC, MON_CPU, or MON_CLOCK depending
+on where you think the plugin looks best.  This is an initial placement
+because the user can re-place plugins.
+
+<blockquote>
+<h5>Plugin Placement</h5>
+When multiple plugins specify placement above the same monitor, the order
+of the plugins is not deterministic.  It depends on the order the plugin.so
+was written into the plugin directory and is not sorted. 
+To give plugins additional
+placement control, there are two values that can be added to the placement
+parameter (both cannot be used at once):
+<uL>
+<li>A flag can be or'ed into a placement value so a plugin can be placed
+	after a builtin monitor instead of the default before the monitor.
+	For example, to place a plugin after the file system monitors, use:
+<pre>
+    #define PLUGIN_PLACEMENT  (MON_FS | MON_INSERT_AFTER)
+</pre>
+	I think a good rule to follow would be
+	to place a plugin before a particular
+	monitor when you are doing it for appearance (ie that is where the
+	plugin looks like it should go), but place the plugin "after" a monitor
+	when there is a functional similarity between the builtin and plugin.
+	Otherwise, a plugin which has a functional similarity and really should
+	be placed right after a builtin monitor may not end up in the right
+	place if several plugins are asking to be placed in the same position.
+	<p>
+	<li>Plugins can specify a gravity value
+	from 0 to 15 in the placement parameter.  Think of it as higher gravity
+	pulling a plugin down in its placement slot.
+	If there is some reason you prefer your
+	plugin be biased downwards, then give it gravity like so:
+	<pre>
+	#define PLUGIN_PLACEMENT (MON_APM | GRAVITY(8))
+	</pre>
+	If there is a very strong reason to bias it down, give it gravity 15.
+	If you want placement with respect to another plugin that has gravity,
+	then give yours a gravity value just above or below the gravity for the
+	other plugin.
+</ul>
+
+<h5>Compiling a Plugin</h5>
+If the
+plugin is a single source file, it can be compiled into a .so file
+and installed with the commands:
+
+<pre>
+    gcc -fPIC `pkg-config gtk+-2.0 --cflags` -c plugin.c
+    gcc -shared -Wl -o plugin.so plugin.o
+    cp plugin.so ~/.gkrellm2/plugins
+</pre>
+
+When developing a plugin, you don't need to install after each compile.
+Just run:
+<pre>
+    gkrellm -p plugin.so
+</pre>
+
+See demo4 in the gkrellm_demos.tar.gz
+file for an example of setting a plugin up with a Makefile.
+</blockquote>
+
+
+<h4>Coding Style Issues</h4>
+<ul>
+<dl><b>Referencing Structures:</b> &nbsp &nbsp
+<i>GK.XXX_tick </i> members may be referenced, but for portability you
+should use gkrellm_ticks() to get a pointer to the GK structure.
+<p>
+It is generally OK to reference other structure members such as
+<i>GkrellmChart, GkrellmPanel, GKrellmKrell, GkrellmDecal, GkrellmStyle, </i>
+and <i>GkrellmTextstyle </i> members.
+But using function calls is preferred if one is available, so check if a
+function call will do the job you want.
+</dl>
+<dl><b>Declaring Structures:</b> &nbsp &nbsp
+Never declare a static structure from gkrellm.h.  Always use the
+<i>gkrellm_XXX_new0() </i> or <i>gkrellm_XXX_copy() </i> functions.
+It is safer to use the <i>copy </i> functions for any <i>GkrellmStyle </i> or
+<i>GkrellmTextstyle </i> structures you may need, but use the <i>new0 </i>
+functions for your <i>GkrellmPanel </i> or <i>GkrellmChart </i> structures.
+</dl>
+<dl>Avoid using global variable names as much as possible to avoid
+collisions with other plugins.
+</dl>
+<p>
+<dl><b>Windows Portability:</b> &nbsp &nbsp
+Many plugins can easily be coded in a style which is portable to Windows.
+Probably all that will be needed are a conditional include of some header
+files, a conditional declaration of the gkrellm_init_plugin() function,
+and use of <i>pGK->xxx_ticks</i> instead of <i>GK.xxx_ticks references.</i>
+<br>
+See the demo programs below for examples of this.
+</dl>
+</ul>
+
+<h4>Charts</h4>
+When a chart is created, it must be associated with a
+GkrellmChartconfig structure.  The chart then has the builtin ability
+to be user configured with very little coding effort in the plugin.
+However, it is the plugins responsibility to save and load the
+configuration state and to possibly connect some callbacks
+so it can make adjustments when user configuration changes are made.
+The things to know are:
+<ul>
+  <li>You must have a pointer (normally initially NULL) to a
+	GkrellmChartconfig structure and pass its address when calling
+	gkrellm_chart_create() or gkrellm_load_chartconfig().
+	If the pointer is NULL, either of these routines will create the
+	GkrellmChartconfig structure and update the pointer.
+  </li>
+  <li>
+	If you destroy a chart, its associated chartconfig is not destroyed.
+	This allows a plugin to maintain configuration in case there are
+	dynamic reasons why a chart might come and go (as in the net
+	charts appearing and disappearing as interfaces are routed and
+	unrouted).
+  </li>
+  <li>
+	If you destroy a chart you may optionally call 
+	gkrellm_destroy_chartconfig() on the config if you no longer have
+	a use for the config.
+	But, you should never destroy a chartconfig unless you also are
+	destroying the chart.
+  </li>
+</ul>
+
+All chart monitors currently in GKrellM consist of a chart
+and a panel just below it.
+Panel creation is generally more involved
+and is discussed later,
+but here is an example
+<a href="Plugins/gkrellm2-demos/demo1.c" name="demo1.c">demo1.c </a>
+which creates a stand alone chart without a panel.
+It is heavily commented so it
+can be a reasonable tutorial for creating a chart, and it is included
+along with the example monitors listed below in
+<a href="Plugins/gkrellm2-demos.tar.gz" name="gkrellm2-demos.tar.gz">
+gkrellm2-demos.tar.gz </a>
+<p>
+I must emphasize that
+the create function for all monitors is a "create event" function which
+will be called for every theme and horizontal size change.
+The first_create variable
+is true only for the initial creation and should be used to allocate
+data and make calls that should be done only once.
+<p>
+After the create function is called,
+the background image and pixmaps for drawing on are initialized.
+The entire chart is a gtk drawing_area and you get allocated expose
+and background pixmaps in the GkrellmChart structure (see gkrellm.h).
+You can draw on these pixmaps and drawing_area however you want, or
+make local pixmaps to work on and then copy to the chart pixmaps.
+The thing to remember is that bg_pixmap has a rendered theme
+background image pre-loaded which you probably want to preserve, but
+there could be exceptions depending on the type of drawing
+done on the chart.
+A plugin can have its own chart drawing routines for all drawing or
+can use the gkrellm chart drawing routine if it will do the job.
+
+<h4>Panels</h4>
+A chart monitor usually has a panel area below the chart, while a meter monitor
+has one or more meter areas and no chart.
+The panel and meter areas of monitors are both created by allocating
+a GkrellmPanel structure and calling gkrellm_panel_create().  The difference
+between them is that they have different theme styles and background
+images.  So many gkrellm_xxx() functions will operate on the common
+GkrellmPanel structure, while others that reference styles and images will
+have distinct functions to use for the panel or meter areas.  For example,
+common functions include gkrellm_panel_create(), gkrellm_panel_configure(),
+and gkrellm_panel_destroy().  But panel areas also have their own functions
+such as gkrellm_panel_style(), gkrellm_bg_panel_piximage(), etc while the
+meter areas have the corresponding gkrellm_meter_style(),
+gkrellm_bg_meter_piximage(), etc.
+<p>
+It may be confusing, but the terminology to keep in mind is that while
+a GkrellmPanel structure applies equally to a panel area and a meter area of
+a monitor (perhaps think of the GkrellmPanel structure as a panel_meter structure),
+there are separate style and image sets to associate with these panel
+and meter areas.
+<p>
+Panels are created to hold krells, decals, and labels, so
+code examples for them will be in the sections below.  Finally, a
+plugin is actually free to mix chart, panel, or meter areas in any order
+or combination in a single plugin so long as you are aware of the
+style and image theming implications.
+<p>
+Again, it is important to emphasize that the create_plugin() routine is
+a create event which will be called multiple times.  Plugins are
+expected to re-create each decal or krell they may have every time
+the create_plugin() routine is called because the GKrellM rebuild routine
+automatically destroys all decals and krells in all panels.  However,
+this automatic destroy can be overridden if you have a reason to
+manage the lists yourself.
+
+
+<h4>Krells</h4>
+<table>
+    <tr>
+        <td>
+        <img src="Plugins/demo2.jpg" alt="demo2.jpg"
+            border="0" align="top">
+        </td>
+        <td>
+A krell is a pixmap graphic which can be moved across the face of a panel
+or meter area.
+Krell drawing functions (gkrellm_update_krell() or
+gkrellm_move_krell_yoff()) draw to the panel pixmap only.  After all
+krell and decal drawing is done in a monitor update routine, the changes
+should be drawn to the screen by calling gkrellm_draw_panel_layers().
+This example program
+<a href="Plugins/gkrellm2-demos/demo2.c" name="demo2.c">demo2.c </a>
+creates a default meter style krell
+with a "Plugin" label for a meter area.
+		</td>
+	</tr>
+</table>
+
+<h4>Decals and Decal Buttons</h4>
+There are two types of decals, pixmap and text, which can be drawn
+on a meter or panel area.  Decal
+drawing functions (gkrellm_draw_decal_text(), gkrellm_decal_text_insert(),
+gkrellm_draw_decal_pixmap(), gkrellm_move_decal())
+draw to the panel pixmap only.  After all
+krell and decal drawing is done in a monitor update routine, the changes
+should be drawn to the screen by calling gkrellm_draw_panel_layers().
+A pixmap decal is a single displayed pixmap frame out of an image
+which was drawn as a vertical stack of pixmap frames.
+The frame displayed is changed by simply calling the decal draw routine
+with a different frame index.  A text decal is a single pixmap which can have
+text drawn on it.
+<p>
+There are two types of buttons that can be created.  There are pixmap decal
+buttons which can be created directly out of a GkrellmPiximage or which
+can be created by converting an existing pixmap decal into a button.
+A pixmap decal can be directly converted into a button because it has a set of
+vertical frames from which a in and out button image can be assigned.
+The second button type applies if you want
+to use a single pixmap text decal (no frames) as a button.  To do this
+it must be indirectly put into a button.  This "putting" operation simply
+overlays the text decal with a default pixmap decal button that has
+in and out images with transparent interiors so the text decal will show
+through.
+
+<p>
+The basic
+sequence to follow is create decals (and krells), and then create buttons.
+The buttons may be pixmap decals converted into buttons, text decals put
+into overlay buttons, or may be pixmap decal buttons created directly
+out of a GkrellmPiximage with gkrellm_make_scaled_button().  Then
+gkrellm_panel_configure() should be called so a panel height to
+accomodate all the krells, decals, and buttons may be calculated.
+Finally, the panel is created.  Note: decals may be converted into
+buttons after the panel is created as was required with GkrellM 1.2.x.
+However, with GKrellM 2.0, most buttons may be created before or after the
+panel is created with these exceptions:  Buttons made with
+gkrellm_make_scaled_button() should be done before the panel is created
+so that gkrellm_panel_configure() will know of their size.  Otherwise
+you will have to explicitely manage the panel size to accomodate the
+buttons that will be created.  And buttons that must still be created
+only after the panel is created are
+gkrellm_put_label_in_xxx_button() where xxx is meter or panel because the
+label won't exist unless the panel is created.
+<p>
+Having buttons which are created out
+of decals may seem unusual, but provides some advantages.
+A button can have its pixmap
+rapidly switched with the same code that switches the pixmaps for a
+normal decal, so it can be efficient to have an animated or state
+displaying button.  However, note that there is a
+gkrellm_set_decal_button_index() call to switch the displayed frame of a
+decal button while the frame displayed for a decal pixmap is set via an
+argument to gkrellm_draw_decal_pixmap().
+Also, since pixmap decals can have transparency and
+can overlap, pixmap decal buttons can do the same, and are not
+restricted to rectangular shapes (the only complication would be the code
+to check for the mouse in the button, see demo4).
+Note that this way of creating buttons
+out of pixmap decals requires that the images for
+the in and out button states (there can be multiple out states)
+must be drawn as frames of a single vertical
+image - you cannot draw them the more traditional way as separate images.
+
+<p>
+<table>
+    <tr>
+        <td>
+        <img src="Plugins/gkrellm2-demo3.png" alt="demo3.png"
+            border="0" align="top">
+        </td>
+        <td>
+To demonstrate the decal and decal button features, this example program
+<a href="Plugins/gkrellm2-demos/demo3.c" name="demo3.c">demo3.c </a>
+will create:
+<ul>
+	<li> a text decal that will be scrolled in the update routine,</li>
+	<li> a large scaled button made from the default button image.</li>
+	<li> a smaller auto hiding scaled button.</li>
+	<li> a text decal that will be put into an overlay button and the text
+		toggled when the button is pressed,</li>
+	<li> a pixmap decal that will be converted into a decal button.</li>
+</ul>
+		</td>
+	</tr>
+</table>
+<p>
+<table>
+    <tr>
+        <td>
+        <img src="Plugins/demo4.png" alt="demo4.png"
+            border="0" align="top">
+		<p>
+        <img src="Plugins/demo4_1.png" alt="demo4_1.png"
+            border="0" align="top">
+        </td>
+        <td>
+There is an advanced demo4 in the
+<a href="Plugins/gkrellm2-demos.tar.gz" name="gkrellm2-demos.tar.gz">
+gkrellm2-demos.tar.gz </a>
+tar file which includes
+a small test-theme that has plugin specific theme images and
+gkrellmrc lines.  The screenshots to the left show the default layout and
+one of the themed alternatives in the test-theme.  Here's the
+<a href="Plugins/gkrellm2-demos/demo4.c" name="demo4.c">demo4.c </a>
+and the
+<a href="Plugins/gkrellm2-demos/gkrellmrc_1" name="gkrellmrc_1">
+gkrellmrc_1 </a> for the themed alternative screenshot.
+		</td>
+	</tr>
+</table>
+
+<h4>Styles, Text Styles, and Themes</h4>
+There is a <a href="Themes.html" name="Themes.html">Themes document</a>
+that describes a GKrellM theme in detail.
+Read this to understand how chart, panel, and meter areas are used
+to construct monitors in GKrellM, and how background images are
+applied to these areas.
+<p>
+When GKrellM loads a theme, style parameters are initialized
+to values set by the theme designer.  These parameters are stored in a GkrellmStyle
+structure for each of the chart, panel, and meter areas.  A GkrellmStyle
+structure has information about the default krells, borders for
+background images, label positions, margins, and two sets of text styles.
+There are functions to access the GkrellmStyle structure for a chart, panel,
+or meter area, and there are convenience functions to access each of
+the GkrellmTextstyle structures within these GkrellmStyle structures.  There are also
+functions to access background images for the areas of each monitor.  These
+styles and images may reference theme wide defaults, but also may
+have been customized at the monitor level depending on the theme.
+When building a plugin monitor, you typically access the GkrellmStyle and/or GkrellmTextstyle
+structures appropriate for the monitor by passing a style_id value
+to the style and image functions.
+The style_id argument should usually be a value returned from
+a gkrellm_add_chart_style() or gkrellm_add_meter_style() call, but
+could be DEFAULT_STYLE_ID or a looked up style_id value for other monitors.
+But be aware that using a style set for another monitor may preclude
+a theme author from customizing your plugin and you may get unexpected
+results with some themes.
+<p>
+It is also easy to provide for theming any images you have local to
+your plugin.  
+I suggest putting a short Themes file in the
+source directory which documents the image names and gkrellmrc
+extensions you create for your plugin.  
+It's hard to say if theme authors will actually do much
+plugin theming, but there certainly will be none if you don't tell
+anybody how to do it.  See the demo4 for a complete themed plugin
+example, and here are a couple of additional fragment examples to
+give you and idea of what might be involved in theming a plugin:
+
+<ul>
+	<li>You have an image for a button you made for your plugin and
+	you #include it but want to provide for using a theme authors
+	substitute:
+<center><table width=80% border=1><tr><td bgcolor=#b0b0a8><pre>
+#include "button.xpm"
+#define STYLE_NAME "foo"
+
+static GkrellmPiximage   *button_image;
+static gint            style_id;
+
+    /* gkrellm_load_piximage() does all the work for you.  It looks for a
+    |  button.png, button.jpg or button.xpm image in a themes foo subdirectory.
+    */
+    gkrellm_load_piximage("button", button_xpm, &button_image, STYLE_NAME);
+
+/* And in the gkrellm_init_plugin() you called: */
+style_id = gkrellm_add_meter_style(&monitor_foo, STYLE_NAME);
+</pre></td></tr></table></center><p>
+And the Themes document for this plugin could contain:<br>
+
+<center><table width=80% border=1><tr><td bgcolor=#b0b0a8><pre>
+This foo plugin may be themed by making images and placing them in
+a "foo" subdirectory of a theme.  The standard images used are:
+   bg_panel.png
+And in addition, this plugin has a themable button image:
+   button.png
+</pre></td></tr></table></center><p>
+
+<a name="SET_IMAGE_BORDER_EXAMPLE">
+	<li>Say we have a plugin called "foo" and it is designed to
+	have two panels (panel1 and panel2).  Both panels would normally
+	have the same background image which can be themed by creating
+	in the theme directory the image foo/bg_panel.png.  But in this
+	case I want to provide for the option of each panel to have a
+	different background.  So I decide to let panel1 have the option
+	of using a different backgound image which I'll call bg_panel1.png:
+<center><table width=80% border=1><tr><td bgcolor=#b0b0a8><pre>
+#define STYLE_NAME  "foo"
+
+static GkrellmMonitor  *plugin_mon;
+static GkrellmPanel    *panel1, *panel2;
+static GkrellmPiximage *bg_panel1_image;
+static gint            style_id;
+
+void
+create_plugin()
+    {
+    GkrellmStyle         *style,
+    static GkrellmStyle  *panel1_style;
+
+    /* Do all the first_create stuff, see demo examples above.
+    |  Then get the style for our plugin.
+    */
+    style = gkrellm_meter_style(style_id);
+
+    /* Copy the style because we may want to modify some of its values.
+    |  First free any previous copy to avoid memory leaks.  Remember,
+    |  create_plugin() may be called multiple times (theme/size changes).
+    |  Copy the style into a static pointer because the GkrellmStyle arg to
+    |  gkrellm_panel_configure() must persist.  This is unlike the GkrellmStyle
+    |  arg passed to any krell or decal create routines.
+    */
+    if (panel1_style)
+        g_free(panel1_style);
+    panel1_style = gkrellm_copy_style(style);
+
+
+     /* See if the custom image can be loaded.  Here the name for the image
+     |  is set, "bg_panel1.png", and is the file name a theme author must use.
+     |  gkrellm_load_piximage() searches the themes STYLE_NAME subdirectory for
+     |  the bg_panel1 image.  First free any previous image - no memory leaks!
+     */
+    if (bg_panel1_image)
+        {
+        gkrellm_destroy_piximage(bg_panel1_image);
+        bg_panel1_image = NULL;
+        }
+     gkrellm_load_piximage("bg_panel1", NULL, &bg_panel1_image, STYLE_NAME);
+
+    /* If one was found, then the theme author may have also specified a border
+    |  and margins for it.  Here we set the name that the theme author must
+    |  use in his gkrellmrc to set the border, foo_bg_panel1;
+    |  Regardless if an image was found, look for top and bottom margins
+    |  the themer may have set for this panel1.
+    */
+    if (bg_panel1_image)
+        {
+        gkrellm_get_gkrellmrc_piximage_border("foo_bg_panel1", bg_panel1_image,
+                    &panel1_style->border);
+        gkrellm_panel_bg_piximage_override(panel1, bg_panel1_image);
+        }
+    gkrellm_get_gkrellmrc_integer("foo_panel1_top_margin",
+                &panel1_style->top_margin);
+    gkrellm_get_gkrellmrc_integer("foo_panel1_bottom_margin",
+                &panel1_style->bottom_margin);
+
+    /* Finally do a normal panel configure and create.  The configure uses
+    |  our possibly modified style.
+    */
+    gkrellm_panel_configure(panel1, NULL, panel1_style);
+    gkrellm_panel_create(vbox, plugin_mon, panel1);
+
+    /* And make panel2 normally with style_id just as in the demo examples above */
+    }
+
+/* In the gkrellm_init_plugin() routine, plugin style and plugin_mon were set up: */
+    style_id = gkrellm_add_meter_style(&monitor_foo, STYLE_NAME);
+    plugin_mon = &monitor_foo;
+</pre></td></tr></table></center><p>
+
+Finally, the Themes document for this plugin could contain:<br>
+
+<center><table width=80% border=1><tr><td bgcolor=#b0b0a8><pre>
+This foo plugin may be themed by making custom images and placing them in
+a "foo" subdirectory of a theme.  The standard images used are:
+   foo/bg_panel.png       (used for the bottom panel and,
+                       if bg_panel1.png does not exist, the top panel)
+   foo/krell.png
+
+In addition, this plugin may be themed with this extension image in foo:
+    foo/bg_panel1.png     (used, if present, for the top panel)
+And a border may be set for bg_panel1.png with a gkrellmrc line:
+    set_image_border foo_bg_panel1  = l,r,t,b
+And top and bottom margins for the panel1 can be set with:
+    set_integer foo_panel1_top_margin = tm
+    set_integer foo_panel1_bottom_margin = bm
+</pre></td></tr></table></center><p>
+</li>
+
+
+<hr>
+<center><h3>GKrellM Plugin Interface Functions</h3></center>
+<hr width=30%>
+<p>
+
+<a name="DATA_ALLOC_FUNCTIONS">
+<hr>
+<h4><center>Data Structure Allocation</center></h4>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GkrellmChart     *gkrellm_chart_new0(void);
+GkrellmChartconfig *gkrellm_chartconfig_new0(void);
+GkrellmPanel     *gkrellm_panel_new0(void);
+GkrellmStyle     *gkrellm_style_new0(void);
+GkrellmStyle     *gkrellm_copy_style(GkrellmStyle *src_style);
+GkrellmTextstyle *gkrellm_textstyle_new0(void);
+GkrellmTextstyle *gkrellm_copy_textstyle(GkrellmTextstyle *src_textstyle);
+</pre></td></tr></table>
+<p>
+These are the functions you should use to allocate storage for the GKrellM
+structures in gkrellm.h.  When you allocate a panel structure with
+p = gkrellm_panel_new0(), a p->label structure is automatically allocated
+for you (and will be freed if you call gkrellm_panel_destroy(p)).
+You should not use gkrellm_style_new0() or gkrellm_textstyle_new0()
+because if you want a local copy of a style or textstyle to modify,
+you should get it by copying an existing style.  So, typically,
+you would:
+<center><table width=80% border=1><tr><td bgcolor=#b0b0a8><pre>
+    GkrellmStyle *my_style, *style;
+
+    style    = gkrellm_meter_style(DEFAULT_STYLE);
+    my_style = gkrellm_copy_style(style);
+</pre></td></tr></table></center>
+<p>
+<br>
+
+
+<a name="CHART_FUNCTIONS">
+<hr>
+<h4><center>GkrellmChart Functions</center></h4>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_chart_create(GtkWidget *box, GkrellmMonitor *mon, GkrellmChart *chart,
+	            GkrellmChartconfig **config);
+</pre></td></tr></table>
+<p>
+Call this function to create a chart.
+A created chart packs a drawing_area into an hbox which in turn is
+packed into the <i>box</i> argument.
+The <i>config</i> arg is the address of a GkrellmChartconfig pointer which
+may be initialized to point to a GkrellmChartconfig struct (by calling
+<b>gkrellm_load_chartconfig()</b>) or may be NULL.  If
+it is NULL, a GkrellmChartconfig struct will be automatically allocated and
+<i>*config</i> will be updated to point to it.
+A background pixmap and an expose pixmap will be allocated
+and initialized with a rendered copy of a chart background image
+determined by the current theme and the <i>style_id</i> value
+(see the demo examples).
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_chart_destroy(GkrellmChart *chart);
+</pre></td></tr></table>
+<p>
+This function frees all the resources (pixmaps, data arrays, etc) in a
+chart structure and it frees the chart structure.  It also destroys and frees
+<i>chart</i>->panel if it is not NULL.
+However, it does not free the chartconfig that was linked to it in
+<b>gkrellm_chart_create()</b>.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+gboolean gkrellm_enable_chart_visibility(GkrellmChart *chart, gboolean new, gboolean *current);
+</pre></td></tr></table>
+<p>
+This function provides a convenient way to show or hide a chart
+based on a <i>new</i> desired visibility and a <i>current</i> visibility.
+It updates <i>*current</i> to TRUE if the chart changes from hidden to
+shown and it updates it to FALSE if the chart changes from shown to hidden.
+The return value is TRUE if the visibility state was changed and returns
+FALSE if the visibility state is unchanged.  If there is a
+<i>chart</i>->panel, the panel is also hidden or shown.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_hide_chart(GkrellmChart *chart, gboolean do_panel);
+void    gkrellm_show_chart(GkrellmChart *chart, gboolean do_panel);
+gboolean gkrellm_is_chart_visible(GkrellmChart *chart);
+</pre></td></tr></table>
+<p>
+Functions for hiding or showing a chart, or for determining the hidden
+state.  If there is a <i>chart</i>->panel and <i>do_panel</i> is TRUE,
+the panel will also be hidden or shown.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+gboolean gkrellm_chart_enable_visibility(GkrellmChart *chart, gboolean new, gboolean *current);
+</pre></td></tr></table>
+<p>
+This function provides a convenient way to show or hide a chart
+based on a <i>new</i> desired visibility and a <i>current</i> visibility.
+It updates <i>*current</i> to TRUE if the chart changes from hidden to
+shown and it updates it to FALSE if the chart changes from shown to hidden.
+The return value is TRUE if the visibility state was changed and returns
+FALSE if the visibility state is unchanged.  If there is a chart->panel,
+the panel will also be hidden or shown.
+<p>
+<br>
+
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_set_draw_chart_function(GkrellmChart *chart, void (*func)(), gpointer data);
+</pre></td></tr></table>
+<p>
+Set the function <i>func</i> to be the draw_chart_function for <i>chart</i>.
+The draw_chart_function will be referred to in other parts of this
+document and is the function
+internal chart routines will call whenever
+chartdata is to be drawn onto a charts expose pixmap <b>and</b> to the screen.
+The default draw_chart_function for all charts
+is an internal routine that simply calls
+<b>gkrellm_draw_chartdata()</b> followed by <b>gkrellm_draw_chart_to_screen()</b>.
+If you want to draw anything extra on a chart (such as labels) then you should
+set your own function to be the draw_chart_function.  Your function should
+draw the chartdata, draw your extra stuff, and
+then draw everything to the screen.
+<p>
+<br>
+
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_draw_chart_grid_line(GkrellmChart *cp, GdkPixmap *pixmap, gint y);
+</pre></td></tr></table>
+<p>
+Draws a theme horizontal grid line onto a <i>pixmap</i> at vertical postion
+<i>y</i>.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_draw_chart_to_screen(GkrellmChart *chart);
+</pre></td></tr></table>
+<p>
+This draws the chart expose pixmap to the screen.  Call this after
+you are done drawing to the expose pixmap with gkrellm_draw_chartdata
+and any other chart drawing routine.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+gint    gkrellm_draw_chart_label(GkrellmChart *chart, GkrellmTextstyle *ts, gint x, gint y, gchar *string);
+</pre></td></tr></table>
+<p>
+Draws a string using the font, colors, and draw effect in ts onto the
+chart expose pixmap at the position (x,y).
+ Drawing is not done to the screen until
+<b>gkrellm_draw_chart_to_screen()</b> is called.
+<p>
+<br>
+
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_draw_chart_text(GkrellmChart *chart, gint style_id, gchar *string);
+</pre></td></tr></table>
+<p>
+Draws text units inside <i>string</i> onto the
+chart expose pixmap at positions determined by position codes embedded in
+the string.  Text units are groups of characters bounded by the position
+codes.  A position code is a backslash followed by a character.
+See Config->General->Info for a list of the position codes.
+Drawing is not done to the screen until
+<b>gkrellm_draw_chart_to_screen()</b> is called.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_reset_chart(GkrellmChart *chart);
+void    gkrellm_reset_and_draw_chart(GkrellmChart *chart);
+</pre></td></tr></table>
+<p>
+These functions zero the data arrays for a <i>chart</i>.
+<b>gkrellm_reset_and_draw_chart()</b> also calls the draw_chart_function.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_refresh_chart(GkrellmChart *chart);
+</pre></td></tr></table>
+<p>
+This function calls the draw_chart_function.  It is automatically called
+internally when needed, but you may call it if you want user config changes
+to be immediately visible inside of apply functions.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_rescale_chart(GkrellmChart *chart);
+</pre></td></tr></table>
+<p>
+This function forces a re-scale and then calls <b>gkrellm_refresh_chart()</b>.
+Normally rescaling is handled internally and you should not need to call
+this function unless you have some special chart scaling needs.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_clear_chart(GkrellmChart *chart);
+void	gkrellm_clear_chart_pixmap(GkrellmChart *chart);
+void	gkrellm_clean_bg_src_pixmap(GkrellmChart *cp);
+
+</pre></td></tr></table>
+<p>
+<b>gkrellm_clear_chart()</b> and <b>gkrellm_clear_chart_pixmap()</b> draw
+the background source pixmap onto the expose pixmap <i>chart</i>->pixmap
+but do not clear the chart data arrays.  <b>gkrellm_clear_chart()</b> also
+draws the background source pixmap to the screen.
+<p>
+<b>gkrellm_clean_bg_src_pixmap()</b> draws the clean background source
+pixmap onto the background source pixmap.  The "clean background source
+pixmap" will always be a simple render of a theme chart background image
+while the "background source pixmap" may additionally have transparency
+applied.
+<p>
+None of these call the draw_chart_function.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_chart_bg_piximage_override(GkrellmChart *chart, GkrellmPiximage *bg_image, GkrellmPiximage *grid_image);
+</pre></td></tr></table>
+<p>
+Calling this function before calling <b>gkrellm_chart_create()</b> will cause
+a chart to be created using the specified <i>bg_image</i> and <i>grid_image</i>
+instead of the background and grid images associated with the
+plugin's style.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+gint    gkrellm_get_chart_scalemax(GkrellmChart *chart);
+</pre></td></tr></table>
+<p>
+This returns the maximum value that can be shown on a <i>chart</i>.
+scalemax will be the current grid resolution times the number of grids
+shown on the chart.  The return value may not be valid if you call this
+function between calling <b>gkrellm_store_chartdata()</b> and
+<b>gkrellm_draw_chartdata()</b>.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_set_chart_height(GkrellmChart *chart, gint h);
+void    gkrellm_set_chart_height_default(GkrellmChartconfig *, gint);
+</pre></td></tr></table>
+<p>
+Normally the user sets the desired chart height in the chartconfig
+window, but use gkrellm_set_chart_height if you need to override for
+any reason.
+<p>
+<b>gkrellm_set_chart_height_default()</b> must be called before
+<b>gkrellm_chart_create()</b> and sets the chart height to an initial
+state only if a user configuration has not been loaded.
+<p>
+<br>
+
+
+
+
+<a name="CHARTDATA_FUNCTIONS">
+<hr>
+<h4><center>GkrellmChartdata Functions</center></h4>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GkrellmChartdata	*gkrellm_add_default_chartdata(GkrellmChart *cp, gchar *label)
+GkrellmChartdata	*gkrellm_add_chartdata(GkrellmChart *cp, GdkPixmap **src_pixmap,
+                           GdkPixmap *grid_pixmap, gchar *label)
+</pre></td></tr></table>
+<p>
+Call one of these two routines for each data set to be drawn on a chart.
+There are two default colors (or to be more accurate, colored pixmaps)
+provided by each theme which are alternately selected at each call to
+<b>gkrellm_add_default_chartdata()</b>.  If you want to alter the default order
+or provide custom colored pixmaps for data drawing, you can specify them
+in <b>gkrellm_add_chartdata()</b>.  The <i>src_pixmap</i> must be a
+GdkPixmap ** because height changes may re-render the pixmap and the
+drawing routines need to be able to reference the changed pixmap.  If
+you provide a custom <i>src_pixmap</i> you should connect to chart
+height changes with <b>gkrellm_chartconfig_height_connect()</b>
+and re-render your pixmaps if necessary.
+The <i>label</i> arg is used to identify the data being configured in
+a chartconfig window.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_alloc_chartdata(GkrellmChart *chart);
+</pre></td></tr></table>
+<p>
+This function allocates data arrays for each chart data layer.
+The arrays are used for data drawing onto the expose pixmap with the
+<b>gkrellm_draw_chartdata()</b> routine and have data stored into them with
+<b>gkrellm_store_chartdata()</b>.  Call this after you have added chartdata
+layers to a chart.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_store_chartdata(GkrellmChart *chart, gulong total, ...);
+</pre></td></tr></table>
+<p>
+This function stores data for each chart data layer into the data arrays
+allocated with <b>gkrellm_alloc_chartdata()</b>.  Following the <i>total</i> arg
+there must be as many gulong arguments as there are chart data layers.
+The data arrays are used as circular buffers and
+the position index is incremented with each call.  The default is that
+data is assumed to monotonically increase in value.  If that is not
+the case, then monotonic mode should be turned off with
+<b>gkrellm_monotonic_chartdata()</b>.  For monotonic data,
+a difference between the current data args and the previous data values
+is what is actually stored.  For non monotonic mode, the current data args
+are stored unmodified.
+To allow plotting of difference data beginning at any point, the first
+call to this routine "primes the pump" and will not store the data.
+<p>
+If the <i>total</i> arg is not zero, then the data values stored are
+scaled assuming that the <i>total</i> should be the maximum of the
+chart.  This allows data to be plotted as a percentage of a total
+and also accounts for timing jitters that can cause the <i>total</i>
+to vary between data samples.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_draw_chartdata(GkrellmChart *chart);
+</pre></td></tr></table>
+<p>
+Call this to draw the data stored with <b>gkrellm_store_chartdata()</b> onto the
+data and expose pixmaps.
+The chart is not drawn to the screen until
+<b>gkrellm_draw_chart_to_screen()</b> is called.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_monotonic_chartdata(GkrellmChartdata *cd, gboolean monotonic);
+</pre></td></tr></table>
+<p>
+Call this with an argument of FALSE if the data is not monotonically
+increasing.  Monotonic and non-monotonic data can be mixed on a chart
+unless you are using non-zero total args in <b>gkrellm_store_chartdata()</b>.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+gboolean  gkrellm_get_chartdata_hide(GkrellmChartdata *cd);
+</pre></td></tr></table>
+<p>
+Gets the current hidden state of a chartdata layer.  The hidden state is
+a user selectable option for some chartdata layers.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+gint    gkrellm_get_current_chartdata(GkrellmChartdata *cd);
+gint    gkrellm_get_chartdata_data(GkrellmChartdata *cd, gint index);
+</pre></td></tr></table>
+<p>
+These return data from a chartdata data array.
+<b>gkrellm_get_current_chartdata()</b>
+returns the last stored data value, while <b>gkrellm_get_chartdata_data()</b>
+returns data at a specified <i>index</i>.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_set_chardata_draw_style(GkrellmChartdata *cd, gint draw_style);
+void    gkrellm_set_chartdata_draw_style_default(GkrellmChartdata *cd, gint draw_style);
+void    gkrellm_set_chartdata_flags(GkrellmChartdata *cd, gint flags);
+</pre></td></tr></table>
+<p>
+Set characteristics of data drawn on charts.  <i>draw_style</i> may have the
+values CHARTDATA_IMPULSE or CHARTDATA_LINE.<br>
+<b>gkrellm_set_chartdata_draw_style_default()</b> sets the draw style to an
+initial state only if a user configuration has not been loaded.
+<p>
+<i>flags</i> is a set of bitwise or'ed values which control the
+presence of some options in the chart
+configuration window.  It may have the values CHARTDATA_ALLOW_HIDE
+(which will allow the user to hide a chartdata layer) and/or
+CHARTDATA_NO_CONFIG_DRAW_STYLE (which prevents the user from being able
+to change the draw style).
+<p>
+<br>
+
+
+
+<a name="CHARTCONFIG_FUNCTIONS">
+<hr>
+<h4><center>GkrellmChartconfig Functions</center></h4>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_create_chartconfig_window(GkrellmChart *chart);
+void    gkrellm_destroy_chartconfig_window(GkrellmChart *chart);
+</pre></td></tr></table>
+<p>
+Use these to create and destroy the chartconfig window.  It is best to
+create it in response to a user right click in the chart drawing area
+(you will need to connect to a callback to get the button events).
+You probably will never need to destroy it explicitely since it is
+automatically destroyed if its chart is destroyed.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_set_chartconfig_grid_resolution(GkrellmChartconfig *cf, gint res);
+gint    gkrellm_get_chartconfig_grid_resolution(GkrellmChartconfig *cf);
+</pre></td></tr></table>
+<p>
+Set or get the current grid resolution.  It is usually set by the user
+or automatically, but you may need to get it if you need
+to make any adjustments when it changes (you need to connect to
+grid resolution changes).
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_chartconfig_grid_resolution_adjustment(GkrellmChartconfig *cf,
+            gboolean map, gfloat spin_factor, gfloat low, gfloat high,
+			gfloat step0, gfloat step1, gint digits, gint width);
+</pre></td></tr></table>
+<p>
+Calling this function will enable the user to set grid resolutions in the
+chartconfig window.   You specify the range of adjustments allowed from
+<i>low</i> to <i>high</i>.  If <i>map</i> is TRUE, the adjustments will
+be constrained to the 1,2,5 or the 1,1.5,2,3,5,7 sequence and the step
+arguments will not be used.  Chart data must be plotted as integer values,
+so if your data is real it must be scaled into integer values before
+being stored by <b>gkrellm_store_chartdata()</b>.  Whatever that scaling factor
+is should also be passed as the <i>spin_factor</i> arg so the resolution
+units the user sees will be the same as the data being charted.  For
+normal unscaled integer data, <i>spin_factor</i> should be 1.0.
+<i>digits</i> is the float precision the spin button will have and
+<i>width</i> is the width in pixels passed to the spin button create.
+If this call is not made, then no grid resolution spin button will show
+up in the chartconfig window and you will have to control grid
+resolutions with <b>gkrellm_set_chartconfig_grid_resolution()</b>.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_chartconfig_grid_resolution_connect(GkrellmChartconfig *cf,
+                void (*func)(), gpointer data);
+void    gkrellm_chartconfig_fixed_grids_connect(GkrellmChartconfig *cf,
+                void (*func)(), gpointer data);
+void    gkrellm_chartconfig_height_connect(GkrellmChartconfig *cf,
+                void (*func)(), gpointer data);
+void	gkrellm_chartconfig_callback_block(GkrellmChartconfig *cf, gboolean block);
+</pre></td></tr></table>
+<p>
+Set function callbacks to be called when any of the described
+parameters change.  The callback <i>func</i> will be called with
+the prototype:
+<p>
+&nbsp &nbsp &nbsp &nbsp (*func)(GkrellmChartconfig *config, gpointer data);
+<p>
+All chartconfig callbacks may be temporarily blocked/unblocked with
+<b>gkrellm_chartconfig_callback_block()</b> which is new in 2.1.11.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_set_chartconfig_flags(GkrellmChartconfig *cf, gint flags);
+</pre></td></tr></table>
+<p>
+Bitwise or <i>flag</i> values to control parts of the chartconfig window.
+Flag values may be NO_CONFIG_FIXED_GRIDS and/or NO_CONFIG_AUTO_GRID_RESOLUTION
+which will prevent the user from changing the fixed grids mode or the
+auto grid resolution mode respectively.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_chartconfig_grid_resolution_label(GkrellmChartconfig *cf, gchar *label);
+</pre></td></tr></table>
+<p>
+This sets the label to appear next to the grid resolution spin button.
+It should identify the units that the spin button changes.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_set_chartconfig_auto_grid_resolution(GkrellmChartconfig *cf, gboolean auto);
+void    gkrellm_set_chartconfig_auto_resolution_stick(GkrellmChartconfig *cf, gboolean stick);
+void    gkrellm_set_chartconfig_sequence_125(GkrellmChartconfig *cf, gboolean seq);
+</pre></td></tr></table>
+<p>
+These set state values of the chartconfig which are normally user set
+in the chartconfig window.  But if you have not added a grid resolution spin
+button the user will not be able set these and you may want to control
+them.  If sequence 125 is set to TRUE, the sequence will be 1,2,5 instead
+of 1,1.5,2,3,5,7.  If auto resolution stick is TRUE, then the auto grid
+resolution mode will stick at the peak value encountered instead of
+ranging over the 1 to 5 base to peak range.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_set_chartconfig_fixed_grids(GkrellmChartconfig *cf, gint grids);
+gint    gkrellm_get_chartconfig_fixed_grids(GkrellmChartconfig *cf);
+</pre></td></tr></table>
+<p>
+Set or get the current fixed grids mode.  If <i>grids</i> is 0, then
+auto number of grids mode is selected.  Otherwise it will be 1 to 5
+fixed grids.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_save_chartconfig(FILE *f, GkrellmChartconfig *cf, gchar *config_keyword, gchar *id);
+</pre></td></tr></table>
+<p>
+Saves all the settings in the chartconfig structure <i>cf</i> into the
+file referenced by <i>f</i>.  <i>config_keyword</i> is the config word
+you are using in your save_plugin_config() routine.  <i>id</i> is an
+extra identifier which will be written if it is not NULL.  It should
+identify which chart is being saved if your plugin has multiple charts.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_load_chartconfig(GkrellmChartconfig **cfp, gchar *config_line, gint max_cd);
+</pre></td></tr></table>
+<p>
+The <i>cfp</i> arg is the address of a GkrellmChartconfig pointer which
+may be initialized to point to a GkrellmChartconfig struct or may be NULL.  If
+it is NULL, a GkrellmChartconfig struct will be automatically allocated and
+<i>*cfp</i> will be updated to point to it.
+Then the <i>config_line</i> is parsed for values to initialize the
+config structure to the same state as was written by
+<b>gkrellm_save_chartconfig()</b>.  <i>max_cd</i> is a failsafe from file
+corruption or user editing of the config file and will limit the
+number of chartdata layers.  It should be the number of chartdata layers
+you will be adding after creating the chart.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_chartconfig_destroy(GkrellmChartconfig **cfp);
+</pre></td></tr></table>
+<p>
+Call this to destroy a chartconfig, but never call it unless you are
+also destroying the chart associated with the chartconfig.  The
+storage referenced by <i>*cfp</i> will be freed and the pointer set
+to NULL.
+<p>
+<br>
+
+
+
+
+<a name="PANEL_FUNCTIONS">
+<hr>
+<h4><center>GkrellmPanel Functions</center></h4>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_panel_create(GtkWidget *box, GkrellmMonitor *mon, GkrellmPanel *panel)
+</pre></td></tr></table>
+<p>
+Call this function to create a panel for a chart or meter monitor and
+pack it into the GtkWidget <i>box</i> argument.
+The <i>mon</i> is a pointer to the same GkrellmMonitor structure returned by
+the plugin's gkrellm_init_plugin() routine.
+If a label has been configured for the panel (in the
+<b>gkrellm_panel_configure()</b> call), it will be drawn on the panel's background
+pixmap.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_panel_configure(GkrellmPanel *p, gchar *label, GkrellmStyle *style);
+</pre></td></tr></table>
+<p>
+This function should be called after creating the decals and krells
+you will need for a panel, and just before calling
+<b>gkrellm_panel_create()</b> to actually create the panel.  The purpose
+of this routine is to calculate a height for the panel to accomodate the
+supplied <i>label</i> argument and all the krells and decals that have
+been created.
+If <i>label</i> is NULL,
+then the calculated height will be sufficient for any decals
+and krells and the panel will have no label, which will be desirable
+for many panels which have text decals.
+If the <i>style</i> arg is a pointer to a GkrellmStyle copy returned from
+<b>gkrellm_copy_style()</b>, then it should not be
+freed after this call.  See how panel1_style is handled
+<a href="plugins2-reference.html#SET_IMAGE_BORDER_EXAMPLE">
+above.</a>  This is unlike the GkrellmStyle pointer passed to decal and krell
+create routines.  If those styles are copies, then they should be freed
+after the decal or krell create.
+<p>
+After the function returns, an adjustment of the panel height, decal
+positions, or krell y offsets  may be made.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_panel_configure_add_height(GkrellmPanel *p, gint height);
+void	gkrellm_panel_configure_set_height(GkrellmPanel *p, gint height);
+gint	gkrellm_panel_configure_get_height(GkrellmPanel *p);
+</pre></td></tr></table>
+<p>
+These calls are made in anticipation of calling
+<b>gkrellm_panel_create()</b>, and may or may not be preceded by
+calling <b>gkrellm_panel_configure()</b>.  With these you can adjust the height
+of the panel that will be created in <b>gkrellm_panel_create()</b> if for
+some reason you need a height setting different from the height
+<b>gkrellm_panel_configure()</b> would set.
+These functions can be useful when calling <b>gkrellm_panel_create()</b> outside
+of the create_plugin() function when you want to resize a panel; or
+they can be used in cases where you don't call <b>gkrellm_panel_configure()</b>
+because you want to set a fixed panel height.  The height of all panels
+is reset to zero when create_plugin() routines are called at theme changes.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_panel_bg_piximage_override(GkrellmPanel *chart, GkrellmPiximage *bg_image);
+</pre></td></tr></table>
+<p>
+Calling this function before calling <b>gkrellm_panel_create()</b> will cause
+a panel to be created using the specified <i>bg_image</i>
+instead of the background image associated with the plugin's style.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_panel_destroy(GkrellmPanel *panel);
+</pre></td></tr></table>
+<p>
+This function frees all resources in a panel structure including
+krell, decals, and buttons and it frees the storage of the GkrellmPanel structure.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_panel_hide(GkrellmPanel *panel);
+void    gkrellm_panel_show(GkrellmPanel *panel);
+gboolean gkrellm_is_panel_visible(GkrellmPanel *panel);
+</pre></td></tr></table>
+<p>
+Functions for hiding or showing a panel, or for determining the hidden
+state.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_panel_keep_lists(GkrellmPanel *panel, gboolean keep);
+</pre></td></tr></table>
+<p>
+When GKrellM is rebuilt at theme or horizontal size changes, the default
+behaviour is to destroy a monitor's decal and krell lists before calling the
+monitor create function.  If you need to manage the lists yourself and
+don't want them destroyed by default, call this routine with
+a TRUE <i>keep</i> value.
+<p>
+<br>
+
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_draw_panel_label(GkrellmPanel *panel);
+</pre></td></tr></table>
+<p>
+This function draws the label in the panel->label structure onto the
+panel background.
+Call this if you have changed
+a label or moved its position, but this is an inefficient call and if you
+need frequent changes to a label, you should be using a text decal instead
+of a label.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_panel_label_on_top_of_decals(GkrellmPanel *p, gboolean mode);
+</pre></td></tr></table>
+<p>
+The panel label is by default drawn below all panel decals.  Call this
+function to control when the label is drawn above or below
+all panel decals.  One application is to make sure panel labels are
+visible through transient appearing decals such as alert decals.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_draw_panel_layers(GkrellmPanel *panel);
+</pre></td></tr></table>
+<p>
+This function walks through the list of decals and krells in a panel and
+draws all that are modified to the screen.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_draw_panel_layers_force(GkrellmPanel *panel);
+</pre></td></tr></table>
+<p>
+This function draws all decals and krells in a panel to the screen even
+if they are not modified.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_panel_label_get_position(GkrellmStyle *style, gint *x_position, gint *y_off);
+</pre></td></tr></table>
+<p>
+Get the theme position settings for panel labels.  Use if you want to
+position some other object such as text decal similarly to how panel
+labels are positions.  <i>x_position</i> is a percent of chart width, so
+a value of 50 indicates centered.  <i>y_off</i> > 0 is the pixel offset from
+the top of the panel.  If it is zero, then panel labels are placed at the
+panel top margin.
+<p>
+<br>
+
+
+<a name="KRELL_FUNCTIONS">
+<hr>
+<h4><center>GkrellmKrell Functions</center></h4>
+
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GkrellmKrell	*gkrellm_create_krell(GkrellmPanel *panel, GkrellmPiximage *im, GkrellmStyle *style);
+</pre></td></tr></table>
+<p>
+This function returns a pointer to a created krell which is also
+appended to the panel GList of krells.  The image <i>im</i> is rendered to a
+source pixmap treated as a vertical stack of frames with a depth
+determined by the <i>style</i>->krell_depth.  The krell frame that will
+be displayed is a function of the horizontal position of the krell (see
+the Themes document).
+
+The krell y position is set to the krell_yoff of the <i>style</i> unless
+the krell_yoff is < 0.  Negative krell_yoff values can be:
+<ul>
+<li>-1 &nbsp put the krell inside the panel margins justified to the
+	top margin.</li>
+<li>-2 &nbsp justify the krell to the bottom of the panel.</li>
+<li>-3 &nbsp put the krell inside the panel margins justified to the
+	bottom margin.</li>
+</ul>
+The panel bottom will be defined by
+other decal or krell object placements in the panel.  If there are no
+other objects in the panel,
+krell_yoff of -1 is equivalent to krell_yoff of -3 (centers the krell in
+the panel) and krell_yoff of -2 is equivalent to krell_yoff of 0,
+
+The krell x_hot
+is set to the <i>style</i> krell_x_hot unless krell_x_hot < 0, which sets the
+krell x_hot to half the width of the image <i>im</i>.
+
+If you need to adjust (center, justify, initial negative offset, etc)
+the krell y postition
+then call <b>gkrellm_move_krell_yoff()</b> after the krell is created.
+After a krell is created, the full scale value should be set with
+<b>gkrellm_set_krell_full_scale()</b>  prior to calling the
+<b>gkrellm_update_krell()</b> routine.
+<p>
+<br>
+
+<a name="SET_STYLE_KRELL_VALUES">
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_set_style_krell_values(GkrellmStyle *style, gint yoff,
+                        gint depth, gint x_hot, gint expand, gint ema,
+                        gint left_margin, gint right_margin);
+void	gkrellm_set_style_krell_values_default(GkrellmStyle *style, gint yoff,
+                        gint depth, gint x_hot, gint expand, gint ema,
+                        gint left_margin, gint right_margin);
+void    gkrellm_set_style_slider_values_default(GkrellmStyle *style, gint yoff,
+                        gint left_margin, gint right_margin);
+</pre></td></tr></table>
+<p>
+Initialize a GkrellmStyle structure with values appropriate for a krell.
+If any args are out of range the corresponding parameter will not be set.
+This means that the parameter setting
+may be selectively omitted by setting the corresponding argument to an out
+of range negative number.  Note that x_hot may be -1 and yoff values may be
+negative.  See <b>gkrellm_create_krell()</b> above.
+An initial krell y position < 0 can only be set with
+<b>gkrellm_move_krell_yoff()</b> after the krell is created.
+Additionally:
+<p>
+<b>gkrellm_set_style_krell_values_default()</b> sets each style parameter only
+if that parameter has not been custom set in the gkrellmrc with a
+StyleMeter or StylePanel line.
+<p>
+<b>gkrellm_set_style_slider_values_default()</b> first copies the image
+related parameters of the builtin
+slider style into <i>style</i> and then sets the positioning parameters
+to the supplied positioning argument values only if the corresponding
+parameter has not been custom set in the gkrellmrc.  This allows custom
+slider positioning while preserving the slider image parameters.
+<p>
+Use these functions to set default values for an extension style for a krell
+or slider.  See <b>gkrellm_xxx_style_by_name()</b> functions and demo4.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_set_krell_full_scale(GkrellmKrell *krell, gint full_scale, gint scaling);
+</pre></td></tr></table>
+<p>
+Set the <i>full_scale</i> value.  If this value is small with respect to
+the panel width and you are creating a chart styled krell, it might help
+to smooth out the jerky appearance of discrete valued krell positions
+by giving a <i>scaling</i> factor that could typically be 10.
+For all meter styled and most chart styled krells, however,
+the <i>scaling</i> factor should be 1.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_set_krell_margins(GkrellmPanel *p, GkrellmKrell *k, gint left, gint right);
+</pre></td></tr></table>
+<p>
+By default, krells have a dynamic range of movement across the full width
+of a panel, but you can use this function to change the range of movement.
+<i>left</i> and <i>right</i> are the number of pixels to move the margins
+in from the left and right panel edges.  If this function is called for
+an expanded style krell, the krell will have already been created and
+the krell pixmaps are not re-rendered to the width
+between the left and right margins.  A better
+way to handle krell margins is to set them with a style and then the
+krell pixmaps optionally can be rendered to the width between the krell
+margins of the style when the krell is created.  This way krell margins and
+rendering can be controlled by the themer transparently to your code.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_set_krell_expand(GkrellmStyle *style, gchar *value);
+</pre></td></tr></table>
+<p>
+This function is deprecated.  Krell expand values should be set up
+to be controlled in the gkrellmrc with custom styles.
+See the <b>gkrellm_xxx_style_by_name()</b> functions.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_update_krell(GkrellmPanel *panel, GkrellmKrell *krell, unsigned long value);
+</pre></td></tr></table>
+<p>
+This routine draws a frame from the krell source pixmap into the krell
+destination pixmap.  The x_hot spot of the frame is drawn
+at a horizontal position between 0 and the panel width - 1.
+The horizontal position is determined by the ratio of the krell update value
+to the krell full scale value.  Krell update values are assumed to be
+monotonically increasing so the actual value used will be the difference
+between the current <i>value</i> and the value from the previous call
+to <b>gkrellm_update_krell()</b>.  If the data is not monotonically increasing
+then you must call <b>gkrellm_monotonic_krell_values()</b> after creating the
+krell.  The krell is not drawn to the screen until
+<b>gkrellm_draw_panel_layers()</b> is called.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_monotonic_krell_values(GkrellmKrell *krell, gboolean mono);
+</pre></td></tr></table>
+<p>
+Call this with an argument of FALSE if the data you will be passing to
+<b>gkrellm_update_krell()</b> is not monotonically increasing.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_destroy_krell(GkrellmKrell *krell);
+void	gkrellm_remove_krell(GkrellmPanel *p, GkrellmKrell *d);
+void	gkrellm_insert_krell(GkrellmPanel *p, GkrellmKrell *d, gboolean append);
+void	gkrellm_insert_krell_nth(GkrellmPanel *p, GkrellmKrell *k, gint n);
+</pre></td></tr></table>
+<p>
+With these you can destroy a krell and control when it is on the
+list of krells to be drawn on a panel.
+By removing and inserting krells, you can control
+their position in the panel glist and
+thus their relative overlapping drawing behaviour.
+Note: if a krell is removed from a panel and not destroyed or re-inserted,
+there can be a memory leak at theme changes because the krell will not
+be in the list of krells where it will be automatically destroyed.
+For this situation, you should explicitely manage krell destruction
+in create_plugin() routines.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_move_krell_yoff(GkrellmPanel *p, GkrellmKrell *k, gint yoffset);
+</pre></td></tr></table>
+<p>
+Moves the vertical offset of a krell into its panel.  This is a krell
+drawing function, so the move will not be drawn to the screen until
+<b>gkrellm_draw_panel_layers()</b> is called.  If <i>yoffset</i> is negative,
+the krell will be moved above the top panel edge so that part or all
+of it will not be visible.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_destroy_krell_list(GkrellmPanel *panel);
+void	gkrellm_destroy_decal_list(GkrellmPanel *panel);
+</pre></td></tr></table>
+<p>
+These two functions destroy all krells and decals in the panel GLists and
+free the lists.  The only time you should need to use these is if
+you call the create_plugin() routine from within the plugin and you have
+not first destroyed the panels in the plugin.  If you do this, then
+these functions should be called at the top of the
+create_plugin() routine if the first_create variable is FALSE.
+If any decals in the decal
+list are also decal buttons, then <b>gkrellm_destroy_decal_list()</b> will also
+destroy the buttons.
+
+<p>
+<br>
+
+
+
+
+<a name="DECAL_FUNCTIONS">
+<hr>
+<h4><center>GkrellmDecal Functions</center></h4>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GkrellmDecal	*gkrellm_create_decal_text(GkrellmPanel *panel, gchar *string,
+				GkrellmTextstyle *ts, GkrellmStyle *style,
+				gint x, gint y, gint w);
+GkrellmDecal	*gkrellm_create_decal_text_with_height(GkrellmPanel *p,
+				GkrellmTextstyle *ts, GkrellmStyle *style,
+				gint x, gint y, gint w, gint h,
+				gint y_ink /* y_baseline for GKrellM < 2.2.0 */);
+</pre></td></tr></table>
+<p>
+These functions return a pointer to a created text decal which is also
+appended to the panel GList of decals.  The decal pixmap
+is allocated with a size based on the supplied
+arguments.  With <b>gkrellm_create_decal_text()</b> the <i>string</i>
+argument is not an initialization string for the decal but
+is used for vertical text extent sizing
+(using the GkrellmTextstyle font <i>ts</i>->font), and the width extent of the
+string is used for the decal width if the argument <i>w</i> = 0.
+<p>
+With <b>gkrellm_create_decal_text_with_height()</b> (new in 2.1.11) the
+decal height and width are explicitely set, but
+because of the font differences between GdkFont and Pango, the last argument
+to this function is not compatible between GdkFont and Pango GKrellM
+versions, so use this function with care.
+<i>y_ink</i> is the pixel offset from the top of the glyph to the first
+ink pixel (ie it is the top padding), while <i>y_baseline</i> is the offset
+from the top of the glyph (uppermost ink pixel) to the origin used for
+drawing and ascent/descent measurements.
+<p>
+For both functions if there is a
+non-null style argument and <i>w</i> < 0 then the decal
+width will be the full GKrellM width minus the left and right margins.
+<i>x</i> < 0 sets the decal x position to the style left margin,
+and <i>y</i> < 0 sets the decal y position to the style top margin.  After
+the decal is created, the x and y values may be adjusted.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_draw_decal_text(GkrellmPanel *panel, GkrellmDecal *decal, gchar *string, gint value);
+</pre></td></tr></table>
+<p>
+Call this function to draw a string into a text decal pixmap.   For gkrellm
+versions < 2.2.0, draws
+occur only if the value argument changes between successive calls unless
+the <i>value</i> is -1, in which case draws will always occur.
+With version 2.2.0, the value argument is ignored and the string is internally
+checked for changes to decide if the draw should occur.
+The <i>string</i> may be drawn with an offset into the pixmap if
+<i>decal</i>->x_off is
+set prior to the call (with 2.2.0, use <b>gkrellm_decal_text_set_offset()</b>),
+but <b>gkrellm_decal_text_insert()</b> may also
+be useful for drawing with offsets.
+The decal pixmap will not be drawn onto the screen until
+<b>gkrellm_draw_panel_layers()</b> is called.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_decal_text_clear(GkrellmDecal *d);
+void	gkrellm_decal_text_insert(GkrellmDecal *d, gchar *s,
+			GkrellmTextstyle *ts, gint x_off, gint y_off);
+</pre></td></tr></table>
+<p>
+New in 2.1.11.
+Use these functions to draw with an offset onto a text decal pixmap.
+Unlike <b>gkrellm_draw_decal_text()</b>, the <b>gkrellm_decal_text_insert()</b>
+function does not
+clear the decal prior to drawing text, so successive draws may be made
+with different offsets and different fonts or colors.  This allows you to
+have a multicolored horizontally or vertically scrolling text decal.  Use
+<b>gkrellm_decal_text_clear()</b> to control the decal clearing.
+<p>
+<br>
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_decal_scroll_text_set_text(GkrellmPanel *p,
+				GkrellmDecal *d, gchar *text);
+void	gkrellm_decal_scroll_text_get_size(GkrellmDecal *d,
+				gint *w, gint *h);
+void	gkrellm_decal_scroll_text_align_center(GkrellmDecal *d,
+				gboolean center);
+void	gkrellm_decal_scroll_text_horizontal_loop(GkrellmDecal *d,
+				gboolean loop);
+void	gkrellm_decal_scroll_text_vertical_loop(GkrellmDecal *d,
+				gboolean loop);
+</pre></td></tr></table>
+<p>
+New in 2.2,0.  These functions are for applications where the text in a
+text decal is scrolled across the decal extents.  As long as the text string
+is unchanged, the inherently slow Pango text drawing at each scroll step
+can be eliminated.  However, Pango drawing will be forced if a scroll
+text decal overlaps any other text decal or if a decal of any type is
+under a scroll text decal.  Use <b>gkrellm_decal_scroll_text_get_size()</b>
+to get the pixel size of the extents of the scroll text and note that
+this is not the decal size which you get from <b>d->w</b> or in 2.2.0
+<b>gkrellm_decal_get_size()</b>.  If the text will be vertically scrolled
+and you want it horizontally centered,
+call <b>gkrellm_decal_scroll_text_align_center(d, TRUE)</b>.  After setting
+the scroll text with <b>gkrellm_decal_scroll_text_set_text()</b>, scrolling
+is achieved by calling <b>gkrellm_decal_text_set_offset()</b> and then
+<b>gkrellm_draw_panel_layers()</b> at each
+scroll step.  A Pango redraw is not done at each
+<b>gkrellm_decal_scroll_text_set_text()</b> call if the text string is not
+changed.
+The horizontal or vertical loop calls create an automatic continuous scrolling
+loop effect as the decal text offset ranges from 0 to the scroll text size.
+These functions can be conditionally compiled in with a
+<pre>
+	#if defined(GKRELLM_HAVE_DECAL_SCROLL_TEXT)
+</pre>
+Pango markup is used to draw the scroll string, so markup attributes may
+be used to get colored text.
+<p>
+<br>
+
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GkrellmDecal	*gkrellm_create_decal_pixmap(GkrellmPanel *panel, GdkPixmap *pixmap,
+				GdkBitmap *mask, gint depth, GkrellmStyle *style, gint x, gint y);
+</pre></td></tr></table>
+<p>
+This function returns a pointer to a created pixmap decal which is also
+appended to the panel GList of decals.   The pixmap argument is used as
+a vertical set of source frames of the given depth and drawing
+a pixmap decal
+consists of supplying a frame number of the pixmap to the drawing routine.
+If the style argument is not NULL and x < 0, then 
+the decal is positioned at the left or right margin depending on the
+style label_position being < or >= 50.  If the style argument is not
+NULL and y < 0, then the decal y position is set to
+the style top margin.
+After the decal is created, the x and y values may be adjusted.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GkrellmDecal	*gkrellm_make_scaled_decal_pixmap(GkrellmPanel *panel,
+			GkrellmPiximage *im, GkrellmStyle *style, gint depth,
+			gint x, gint y, gint w, gint h_frame)
+</pre></td></tr></table>
+<p>
+New in 2.1.1.
+This function returns a pointer to a created pixmap decal which is also
+appended to the panel GList of decals if <i>panel</i> is not NULL.
+The base decal
+frame height will be <i>h_frame</i> unless <i>h_frame</i> is zero, in which
+case it will be the
+height of the image <i>im</i> divided by <i>depth</i>.
+The final real frame height will be the base frame height times the user
+set theme scale.
+If the style argument is not NULL and x < 0, then 
+the decal is positioned at the left or right margin depending on the
+style label_position being < or >= 50.  If the style argument is not
+NULL and y < 0, then the decal y position is set to
+the style top margin.
+After the decal is created, the x and y values may be adjusted.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_draw_decal_pixmap(GkrellmPanel *panel, GkrellmDecal *decal, gint frame);
+</pre></td></tr></table>
+<p>
+Call this function to draw a decal source pixmap frame into the decal pixmap.
+Draws occur only if the frame argument changes between successive calls,
+and the decal pixmap will not be drawn onto the screen until
+<b>gkrellm_draw_panel_layers()</b> is called.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_move_decal(GkrellmPanel *p, GkrellmDecal *d, gint x, gint y);
+</pre></td></tr></table>
+<p>
+Moves the x,y position of a decal in its panel.  This is a decal
+drawing function, so the move will not be drawn to the screen until
+<b>gkrellm_draw_panel_layers()</b> is called.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_decal_on_top_layer(GkrellmDecal *d, gboolean top);
+</pre></td></tr></table>
+<p>
+The default is for krells to be drawn on top of decals, but calling this
+function with <i>top</i> TRUE will cause a decal to be drawn on top of
+krells.  The layer change will not be drawn to the screen until
+<b>gkrellm_draw_panel_layers()</b> is called.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_draw_decal_on_chart(GkrellmChart *cp, GkrellmDecal *d, gint x, gint y);
+</pre></td></tr></table>
+<p>
+This function provides a way to paste a decal onto a chart.  If the decal is
+for a chart only and will not be used on a panel, then the decal should be
+created with a NULL panel pointer (otherwise you would have to remove the
+decal from the panel).  Before drawing the decal on a chart, you may call
+<b>gkrellm_draw_decal_pixmap()</b> or <b>gkrellm_draw_decal_text()</b>
+with a NULL panel pointer to setup the decal with the right pixmap frame
+or text.  Then the results can be drawn on a chart with
+<b>gkrellm_draw_decal_on_chart()</b>, which should be done as part
+of a chart drawing routine that ends up by calling
+<b>gkrellm_draw_chart_to_screen()</b>.
+Decals are not automatically managed in a decal list for charts,
+so your create_plugin() routine should handle destroying any decals not
+in a panel to avoid memory leaks at theme changes.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_make_decal_visible(GkrellmPanel *panel, GkrellmDecal *decal);
+void	gkrellm_make_decal_invisible(GkrellmPanel *panel, GkrellmDecal *decal);
+gint	gkrellm_is_decal_visible(GkrellmDecal *decal);
+</pre></td></tr></table>
+<p>
+Use these functions to control visibility of a decal without having to
+remove it from its panel.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_destroy_decal(GkrellmDecal *decal);
+void	gkrellm_remove_decal(GkrellmPanel *p, GkrellmDecal *d);
+void	gkrellm_insert_decal(GkrellmPanel *p, GkrellmDecal *d, gboolean append);
+void	gkrellm_insert_decal_nth(GkrellmPanel *p, GkrellmDecal *d, gint n);
+</pre></td></tr></table>
+<p>
+With these you can destroy a decal and control when it is on the
+list of decals to be drawn on a panel.
+
+By removing and inserting decals, you can control their position in the
+panel glist and thus their relative overlapping drawing behaviour.
+Note: if a decal is removed from a panel and not destroyed or re-inserted,
+there can be a memory leak at theme changes because the decal will not
+be in the list of decals where it will be automatically destroyed.
+For this situation, you should explicitely manage decal destruction
+in create_plugin() routines.  A decal may not be removed after it is
+converted into a decal button.
+<p>
+If you destroy a decal that has been converted into a decal button, then
+the decal button will also be destroyed.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_decal_get_size(GkrellmDecal *d, gint *w, gint *h);
+void	gkrellm_decal_text_set_offset(GkrellmDecal *d, gint x, gint y);
+void	gkrellm_decal_text_get_offset(GkrellmDecal *d, gint *x, gint *y);
+</pre></td></tr></table>
+<p>
+New in 2.2.0.  Use of these is preferred over the previous direct access of
+a decal's structure members for decal size and offset.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_text_extents(PangoFontDescription *font_desc, gchar *text,
+					gint len, gint *width, gint *height, gint *baseline,
+					gint *y_ink);
+gint	gkrellm_gdk_string_width(PangoFontDescription *, gchar *);
+void	gkrellm_gdk_draw_string(GdkDrawable *drawable,
+					PangoFontDescription *font,
+					GdkGC *gc, gint x, gint y, gchar *string);
+void	gkrellm_gdk_draw_text(GdkDrawable *drawable,
+					PangoFontDescription *font,
+					GdkGC *gc, gint x, gint y, gchar *string, gint len);
+</pre></td></tr></table>
+<p>
+New in 2.2.0.  These are convenience functions for transitioning from
+GdkFont to PangoFontDescription.
+<p>
+<br>
+
+
+<a name="DECALBUTTON_FUNCTIONS">
+<hr>
+<h4><center>GkrellmDecalbutton Functions</center></h4>
+For decal buttons, the decal pressed frame will be
+displayed when the mouse button is clicked in the decal, and the button
+function callback will be called when the mouse button is
+released if the mouse is still in the decal.  A separate callback when
+using the right mouse button may be connected.
+<p>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GkrellmDecalbutton  *gkrellm_make_scaled_button(GkrellmPanel *panel,
+                        GkrellmPiximage *image, void (*func)(), void *data,
+                        gboolean auto_hide, gboolean set_default_border,
+                        gint depth, gint cur_index, gint pressed_index,
+                        gint x, gint y, gint w, gint h);
+</pre></td></tr></table>
+<p>
+This is probably the best and most flexible way to make a button as long
+as you are not making a text decal button or a button using frames out of
+the builtin <b>gkrellm_decal_misc_pixmap()</b>.  If <i>image</i> is NULL, a builtin
+default button image with two frames (an out and a pressed frame) is used.
+If you use your own image, there may be more than 2 frames specified
+with <i>depth </i>.  If <i>auto_hide</i> is TRUE, the button will be
+visible only when the mouse is in the panel.  If <i>set_default_border</i>
+is TRUE, the button will be scaled with default border values of 1,
+otherwise it will be scaled with the <i>image </i> border values (which
+will be zero unless you have set them).
+<i>cur_index </i> is the initial
+button out frame and may be changed with <b>gkrellm_set_decal_button_index()</b> if
+the image has more than 2 frames to realize animated or state
+indicating buttons.  Frame changes
+will not show on the screen until <b>gkrellm_draw_panel_layers()</b> is called.
+<i>pressed_index </i>
+is the button frame displayed when the button is pressed.
+If <i>w</i>
+and <i>h</i> are zero, the button size will be the <i>image</i> size.
+The actual button size will be different from an argument specified size or
+image size if the user has set a theme scale other than 100.
+If <i>image </i> is NULL, <i>depth, cur_index, </i> and
+<i>pressed_index </i> are ignored.
+See demo3 for example usage.
+<p>
+<br>
+
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GkrellmDecalbutton  *gkrellm_make_decal_button(GkrellmPanel *panel, GkrellmDecal *decal,
+                         void (*func)(), void *data, gint cur_index, gint pressed_index);
+</pre></td></tr></table>
+<p>
+After a pixmap decal has been created, the decal may be converted to
+a decal button.  Recall that a pixmap decal has a source pixmap
+divided into a vertical stack of frames.
+<i>cur_index </i> is the initial
+button out frame and may be changed with <b>gkrellm_set_decal_button_index()</b> if
+the image has more than 2 frames to realize animated or state
+indicating buttons.  Frame changes
+will not show on the screen until <b>gkrellm_draw_panel_layers()</b> is called.
+<i>pressed_index </i>
+is the button frame displayed when the button is pressed.
+See demo3 for example usage.<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GkrellmDecalbutton  *gkrellm_make_overlay_button(GkrellmPanel *panel, void (*func)(), void *data,
+                       gint x, gint y, gint w, gint h,
+                       GkrellmPiximage *normal_image, GkrellmPiximage *pressed_image);
+</pre></td></tr></table>
+<p>
+This function creates a two frame decal out of normal_image and
+pressed_image and then turns it into a decal button.  It is used to implement
+panel and meter buttons below and is mainly an internal function but
+is made available just in case.   This function is not intended to be used
+to create plugin buttons directly out of loaded images because the
+overlay button type is not considered when sizing a panel with
+<b>gkrellm_panel_configure()</b>.  I strongly suggest that plugins not use this
+function.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GkrellmDecalbutton	*gkrellm_put_decal_in_panel_button(GkrellmPanel *panel, GkrellmDecal *decal,
+						void (*func)(), void *data, GkrellmMargin *margin);
+GkrellmDecalbutton	*gkrellm_put_decal_in_meter_button(GkrellmPanel *panel, GkrellmDecal *decal,
+						void (*func)(), void *data, GkrellmMargin *margin);
+</pre></td></tr></table>
+<p>
+Instead of converting a decal directly into a button, these functions create
+a decal button in a panel or meter area which is overlayed onto an
+existing decal.  The created decal
+button is a rectangular border around a transparent interior so the
+existing decal shows through, which is useful for indirectly converting a
+text decal into a decal button.
+If <i>margin </i> is not NULL, then the size of the
+transparent interior of the created button will be padded with the margin
+values.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GkrellmDecalbutton	*gkrellm_put_label_in_panel_button(GkrellmPanel *panel, void (*func)(),
+						void *data, gint pad);
+GkrellmDecalbutton	*gkrellm_put_label_in_meter_button(GkrellmPanel *panel, void (*func)(),
+						void *data, gint pad);
+</pre></td></tr></table>
+<p>
+These functions are similar to putting a decal into a button, except that
+the created decal button is overlayed onto the panel or meter label.
+The button can be padded horizontally around the label with the pad
+argument.  If there is no label on the panel or meter, the entire panel
+or meter area is placed inside the overlay button.
+These functions can only be called after <i>panel</i> has been created.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	  gkrellm_set_in_button_callback(GkrellmDecalbutton *button,
+                    gint (*func)(), gpointer data);
+gboolean  gkrellm_in_decal(GkrellmDecal *decal, GdkEventButton *ev);
+</pre></td></tr></table>
+<p>
+If you have a non-rectangular <i>button</i> it will be pressed when the
+mouse is clicked in its decal rectangular bounding box unless you
+provide your own "in button" routine to test the mouse position.  Use this
+function to set your in button routine to do the test.  The func will be
+called like this:
+(*func)(GkrellmDecal *decal, GdkEventButton *ev, gpointer data) and your func
+should return TRUE if the ev->x and ev->y is in the active area of the
+button's decal.  The default in button callback is <b>gkrellm_in_decal()</b>
+and you may call it directly (probably useful for checking for the mouse in
+a decal drawn on a chart).  See demo4 for example usage of these functions.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_decal_button_connect(GkrellmDecalbutton *button, void (*func)(), void *data);
+void	gkrellm_decal_button_right_connect(GkrellmDecalbutton *button, void (*func)(), void *data);
+</pre></td></tr></table>
+<p>
+Change the callback function which will be invoked when a <i>button</i> is
+clicked.  If a <b>gkrellm_decal_button_right_connect()</b> is made, then
+the <i>button</i> can invoke a distinct callback with a right button
+click.  The callback function prototype is <br>
+&nbsp &nbsp <b>void (*func)(GkrellmDecalbutton *button, gpointer data); </b>
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_set_button_sensitive(GkrellmDecalbutton *button, gboolean sensitive);
+void	gkrellm_hide_button(GkrellmDecalbutton *button);
+void	gkrellm_show_button(GkrellmDecalbutton *button);
+</pre></td></tr></table>
+<p>
+These functions control button visibility and sensitivity in a panel.
+Hiding a button also makes it insensitive.
+To move a button's position in its
+panel, use <b>gkrellm_move_decal()</b> and move the decal used to create
+the button.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_destroy_button(GkrellmDecalbutton *button);
+</pre></td></tr></table>
+<p>
+This destroys the button and the decal associated with the button.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_set_decal_button_index(GkrellmDecalbutton *decal, gint frame);
+</pre></td></tr></table>
+<p>
+Use this function to select the decal frame to display if a decal has been
+converted to a button.  Do not call <b>gkrellm_draw_pixmap_decal()</b> to change
+the displayed frame for decal buttons, and you should not call this function
+with frame equal to the pressed_frame.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GkrellmDecalbutton    *gkrellm_decal_is_button(GkrellmDecal *decal);
+</pre></td></tr></table>
+<p>
+Search the button list to see if decal is a button decal.  If so, return
+a pointer to the GkrellmDecalbutton, otherwise return NULL.
+<p>
+<br>
+
+
+
+
+
+<a name="PIXOP_FUNCTIONS">
+<hr>
+<h4><center>GkrellmPiximage and GdkPixbuf Functions</center></h4>
+A GkrellmPiximage is just a GdkPixbuf along with a GkrellmBorder.  If a
+plugin is using images where borders do not apply, it can directly use
+GdkPixbuf functions.  Or these functions can be mixed, for example,
+a themed image may be loaded with image=gkrellm_load_piximage() and
+subsequently only gdk_pixbuf_xxx() functions used to operate on
+the image->pixbuf.
+<p>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+gboolean  gkrellm_load_piximage(gchar *name, gchar **xpm, GkrellmPiximage **im, gchar *subdir);
+gboolean  gkrellm_load_piximage_from_inline(gchar *name, const guint8 *data,
+                    GkrellmPiximage **image, gchar *subdir, gboolean copy_pixels);
+</pre></td></tr></table>
+<p>
+These functions provide a way for plugins to use themed variations of any
+local images they may have.
+<p>
+The <i>subdir</i>
+of the current theme directory is searched for <i>name</i>.png
+(or <i>name</i>.jpg, etc).  If found it is loaded and <i>*im</i> is
+updated to point to it.
+If not found, the <i>xpm</i> image is loaded (or the inline GdkPixbuf
+<i>data</i> is used if using <b>gkrellm_load_piximage_from_inline())</b> and
+<i>*im</i> updated.
+If <i>*im</i> is not NULL at entry, the image it points to is
+destroyed before it is updated
+to the newly loaded image.  It is not destroyed if
+a new image cannot be loaded.
+<i>copy_pixels</i> is passed directly to <b>gdk_pixbuf_new_from_inline()</b> if
+the inline <i>data</i> is used.
+Since <i>im</i> usually will be a static variable, image maintenance can
+be automatically handled with no memory leaks as themes change, but beware
+if <i>im</i> is declared automatic where it should be initialized to NULL.
+If a new image is successfully loaded, the function returns TRUE, otherwise
+FALSE.
+The <i>subdir</i> name should be the same name as referenced by your
+style_id, which must be added in your gkrellm_init_plugin() routine with
+a call to
+<b>gkrellm_add_meter_style()</b> or <b>gkrellm_add_chart_style()</b>,
+see above demo2.c.
+Theme alternative (<i>name</i>_X.png) images in the <i>subdir</i> are handled.
+<p>
+ For example, your plugin uses a custom image
+(krell, button, decal) you created, call it foo.xpm, but you want theme
+authors to be able to provide a themed substitute (foo.png, foo.jpg, etc)
+in their theme.
+A code fragment would look like:
+<center><table width=80% border=1><tr><td bgcolor=#b0b0a8><pre>
+#include "foo.xpm"
+
+static GkrellmPiximage   *foo_image;
+static gint            style_id;
+
+gkrellm_load_piximage("foo", foo_xpm, &foo_image, "my_plugin_style_name");
+
+/* And in the gkrellm_init_plugin() you called: */
+style_id = gkrellm_add_meter_style(&plugin_mon, "my_plugin_style_name");
+</pre></td></tr></table></center>
+
+With these arguments <b>gkrellm_load_piximage()</b> will try to load
+foo.png (or .jpg etc) or foo_N.png (if a theme alternative N is selected)
+from the my_plugin_style_name subdirectory of the current theme
+directory.  If the theme author has created this custom image it will be
+loaded, otherwise the included foo_xpm
+image will be loaded.  foo_image will be updated to point to whichever
+image is loaded.  If foo_image is not NULL at entry, it is
+automatically destroyed prior to loading the new image.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GkrellmPiximage   *gkrellm_piximage_new_from_file(gchar *fname)
+GkrellmPiximage   *gkrellm_piximage_new_from_xpm_data(gchar **data)
+GkrellmPiximage   *gkrellm_piximage_new_from_inline(const guint8 *data, gboolean copy_pixels)
+</pre></td></tr></table>
+<p>
+Reads image data from a file, #included xpm data, or inline
+GdkPixbuf data and creates a
+GkrellmPiximage structure.  The border values are initialized to zero.
+<i>copy_pixels</i> is passed to <b>gdk_pixbuf_new_from_inline()</b>.
+<p>
+<br>
+
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+gboolean    gkrellm_scale_piximage_to_pixmap(GkrellmPiximage *src_image,
+                       GdkPixmap **pixmap, GdkBitmap **mask, gint w, gint h);
+gboolean    gkrellm_scale_pixbuf_to_pixmap(GdkPixbuf *src_pixbuf,
+                       GdkPixmap **pixmap, GdkBitmap **mask, gint w, gint h);
+</pre></td></tr></table>
+<p>
+These functions scale a temporary copy of a GdkPixbuf to size <i>w</i>
+and <i>h</i> and then update <i>*pixmap</i>
+and <i>*mask</i> to point to a pixmap and mask copy of the scaled pixbuf.
+If scaling a piximage to a pixmap, the scaling operation looks at the border
+values of the piximage and scales the pixbuf in stages so that border
+regions are scaled properly.  If <i>*pixmap</i> is
+not NULL when this function is called, the pixmap it points to is freed.
+If <i>w</i> or <i>h</i> is <= zero then the rendered width or height
+will be the image width or height.
+<p>
+If the border values of a piximage are zero, then
+<b>gkrellm_scale_piximage_to_pixmap</b>(image, ...) is equivalent to
+<b>gkrellm_scale_pixbuf_to_pixmap</b>(image->pixbuf, ...)
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GdkPixbuf   *gkrellm_scale_piximage_to_pixbuf(GkrellmPiximage *piximage,
+                        gint w_dst, gint h_dst);
+</pre></td></tr></table>
+<p>
+Scales the pixbuf in a <i>piximage</i> into a new pixbuf with size
+<i>w_dst</i> and <i>h_dst</i> and returns
+a pointer to the new GdkPixbuf.  The scaling accounts for the piximage borders.
+<p>
+<br>
+
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void     gkrellm_paste_piximage(GkrellmPiximage *src_image, GdkDrawable *drawable,
+                        gint x_dst, gint y_dst, gint w_dst, gint h_dst);
+void     gkrellm_paste_pixbuf(GdkPixbuf *src_pixbuf, GdkDrawable *drawable,
+                        gint x_dst, gint y_dst, gint w_dst, gint h_dst);
+</pre></td></tr></table>
+<p>
+These functions scale a pixbuf to a new <i>w_dst</i> and <i>h_dst</i>
+and draw the resulting pixbuf on the drawable at location
+<i>x_dst</i> and <i>y_dst</i>.  The source
+pixbuf is not altered.  If pasting a piximage, the scaling accounts for
+the piximage borders.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void        gkrellm_destroy_piximage(GkrellmPiximage *piximage)
+</pre></td></tr></table>
+<p>
+Unrefs the pixbuf in the <i>piximage</i> and then frees the <i>piximage</i>.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+gboolean    gkrellm_clone_pixmap(GdkPixmap **dst_pixmap, GdkPixmap **src_pixmap);
+gboolean    gkrellm_clone_bitmap(GdkBitmap **dst_bitmap, GdkBitmap **src_bitmap);
+</pre></td></tr></table>
+<p>
+If the destination pixmap or bitmap exists and is the same size as the
+source, then draw the source onto the destination.  Otherwise,
+free the destination pixmap or bitmap, allocate a new destination
+the same size as the source, and then draw the source onto the destination.
+If the source pointers are NULL, the destination drawable will simply
+be freed.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void        gkrellm_free_pixmap(GdkPixmap **pixmap);
+void        gkrellm_free_bitmap(GdkBitmap **bitmap);
+</pre></td></tr></table>
+<p>
+Unref and set to NULL a <i>*pixmap</i> or <i>*bitmap</i>.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_set_piximage_border(GkrellmPiximage *piximage, GkrellmBorder *border)
+</pre></td></tr></table>
+<p>
+Copies the values from <i>border</i> into the border for the <i>piximage</i>.
+<p>
+<br>
+
+
+<a name="MISC_FUNCTIONS">
+<hr>
+<h4><center>Misc Support Functions</center></h4>
+
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+gboolean  gkrellm_get_gkrellmrc_integer(gchar *int_name, gint *result)
+</pre></td></tr></table>
+<p>
+This function allows a plugin to retrieve an integer value which may be
+specified in a theme gkrellmrc file.  If the integer is specified in the
+gkrellmrc, the function returns TRUE, else FALSE.
+Say a plugin <b>pluginname</b>
+is designed to allow variable horizontal positioning of a button
+in a panel and wants to check if a theme author has specified this
+positioning.  The plugin writer must make up a name to look for and should
+document this (in a plugin <b>Themes</b> file) so theme makers will know the
+variable can be specified in the gkrellmrc.
+It's a good idea to embed the
+plugin name into the integer name to avoid collisions with other monitors.
+For example, if code is
+written like this:
+
+<center><table width=80% border=1><tr><td bgcolor=#b0b0a8><pre>
+gint   button_x;
+
+create_plugin()
+    {
+    ...
+    if (gkrellm_get_gkrellmrc_integer("pluginname_button_x", &button_x) == FALSE)
+        button_x = DEFAULT_BUTTON_X;
+    else
+        /* range check button_x */
+    /* Use button_x value to place the button */
+    ...
+    }
+</pre></td></tr></table></center>
+
+Then the plugin author should document in his <b>Themes</b> file that
+an integer variable <b>pluginname_button_x</b> may be specified in a theme's
+gkrellmrc with a line like:
+<pre>
+set_integer  pluginname_button_x = n
+</pre>
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+gchar  *gkrellm_get_gkrellmrc_string(gchar *string_name)
+</pre></td></tr></table>
+<p>
+This function allows a plugin to retrieve a string which may be
+specified in a theme gkrellmrc file.  If the string is found in the
+gkrellmrc, a pointer to an allocated (g_strdup()) copy of the string
+is returned, else NULL is returned.
+Say a plugin <b>pluginname</b>
+wants to use a string it will interpret as a color value string
+and wants to check if a theme author has specified this
+color.  The plugin writer must make up a name to look for and should
+document this (in a plugin <b>Themes</b> file) so theme makers will know the
+color can be specified in the gkrellmrc.
+It's a good idea to embed the
+plugin name into the color string name to avoid collisions with other monitors.
+For example, if code is
+written like this:
+
+<center><table width=80% border=1><tr><td bgcolor=#b0b0a8><pre>
+
+gchar   *plot_color_string;
+
+create_plugin()
+    {
+    ...
+    if (plot_color_string)
+        g_free(plot_color_string);
+    plot_color_string = gkrellm_get_gkrellmrc_string("pluginname_plot_color");
+    if (plot_color_string == NULL)
+        plot_color_string = g_strdup(DEFAULT_PLOT_COLOR_STRING);
+    ...
+    }
+</pre></td></tr></table></center>
+
+Then the plugin author should document in his <b>Themes</b> file that
+a color <b>pluginname_plot_color</b> may be specified in a theme's
+gkrellmrc with a line like:
+<pre>
+set_string  pluginname_plot_color = "color_string"
+</pre>
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+gboolean   gkrellm_set_gkrellmrc_piximage_border(gchar *name,
+                    GkrellmPiximage *image, GkrellmStyle *style);
+gboolean   gkrellm_get_gkrellmrc_piximage_border(gchar *name,
+                    GkrellmPiximage *image, GkrellmBorder *border)
+</pre></td></tr></table>
+<p>
+These functions allows a border specified in a theme gkrellmrc file to
+be applied to a a custom background image a plugin may use.
+<p>
+If the border was set, <b>gkrellm_set_gkrellmrc_piximage_border()</b> applies
+the border to <i>image </i> and if <i>style </i> is not NULL,
+copies the border values into its border.  If the border was not set
+the <i>style </i> border values are set to zero.
+<p>If the border was set,
+the <b>gkrellm_get_gkrellmrc_piximage_border()</b> function will
+apply the border to <i>image </i> and copy
+the border values into <i>border </i> if it is not NULL.
+<p>
+The sequence probably will be:
+<ul>
+<li>A plugin coder designs into the plugin the capability to use an
+alternate custom background for a subarea of a panel or for an entire
+panel.  This makes sense for plugins that create multiple panels and it
+would be cool for one of them to be able to have a background different
+from the others.
+<li>The plugin coder makes up a name for this image and loads it by calling
+<b>gkrellm_load_piximage()</b>.  This will load the custom image if it exists in
+the theme.
+<li>If it does exist, then a call to <b>gkrellm_set_gkrellmrc_piximage_border()</b>
+should also be made to access a possible border specification for it the theme
+author may have put in the gkrellmrc.
+<li>The plugin coder should document that his plugin can be themed so
+theme makers can know what can be done.  For example, say the image name
+that was made up was bg_special.png, and the
+border name associated with it was set up to be pluginname_bg_special.
+Then the plugin coder should
+document in a <b>Themes</b> file
+that theming capability exists for his plugin by specifying these names.
+The theme maker sees the documentation and knows he can create a
+theme image pluginname/bg_special.png and can specify a border for it
+in his gkrellmrc with a line like:<br>
+<pre>
+set_image_border pluginname_bg_special l,r,t,b<br>
+</pre>
+</ul>
+See the above
+<a href="plugins2-reference.html#SET_IMAGE_BORDER_EXAMPLE">example code</a>
+that uses this function.
+<p>
+<br>
+
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_monitor_height_adjust(gint height);
+</pre></td></tr></table>
+<p>
+You probably never need to call this since height adjustsments are
+automatic when charts or panels are created or destroyed.  However
+if you ever change a height in an unusual way, you may need to call
+this function to let GKrellM know the height has changed.  If you have
+to call this function, then you may also have to call
+<b>gkrellm_pack_side_frames()</b>.  Coding like this is not recommended.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_message_dialog(gchar *title, gchar *message);
+void	gkrellm_config_message_dialog(gchar *title, gchar *message);
+</pre></td></tr></table>
+<p>
+These functions pop up a dialog with an informative message string displayed
+and a single "OK" button.  The dialog from <b>gkrellm_message_dialog()</b> appears
+over the gkrellm window and does not block.  The dialog from
+<b>gkrellm_config_message_dialog()</b> appears over the config window and blocks
+user input until the OK button is pressed.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_pack_side_frames(void);
+void    gkrellm_freeze_side_frame_packing(void);
+void    gkrellm_thaw_side_frame_packing(void);
+</pre></td></tr></table>
+<p>
+<b>gkrellm_pack_side_frames()</b> renders the side frames to the current monitor
+height.  It is called automatically after all the create functions or
+config apply functions are called.  It is also called automatically if you
+use the hide/show functions at other times.
+If you change a monitor's height in some other way such that you need
+to call <b>gkrellm_monitor_height_adjust()</b>, then you should also pack the frames.
+<p>
+If hiding or showing multiple charts or panels, freeze the side frame
+packing before you start and thaw it when you are done for efficiency, unless
+it is code inside of an apply.  Do not call <b>gkrellm_pack_side_frames()</b> if
+you do a freeze and a thaw.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_draw_string(GdkDrawable *drawable, GkrellmTextstyle *ts, gint x, gint y, gchar *string);
+</pre></td></tr></table>
+<p>
+Draws a string using the font, colors, and draw effect in ts onto the
+drawable at position (x,y).
+<p>
+<br>
+
+<a name="GET_SET_STYLE_MARGINS">
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GkrellmMargin	*gkrellm_get_style_margins(GkrellmStyle *style)
+void	gkrellm_set_style_margins(GkrellmStyle *style, GkrellmMargin *margins);
+</pre></td></tr></table>
+<p>
+<b>gkrellm_get_style_margins()</b> returns a pointer to a GkrellmStyle's GkrellmMargin
+struct which has the members left, right, top, bottom.
+These margins are generally used for decal or label placements.
+Krells have their own independent left and right margin settings.<br>
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_get_top_bottom_margins(GkrellmStyle *style, gint *top, gint *bottom)
+</pre></td></tr></table>
+<p>
+This routine returns the <i>top</i> and <i>bottom</i> margin associated with
+a <i>style</i>.  The values are from the GkrellmStyle's GkrellmMargin struct.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_config_modified(void);
+</pre></td></tr></table>
+<p>
+Calling this function marks the user_config modified.  If it
+is still modified when GKrellM exits,
+the user_config file will be automatically written.
+Writting the user_config means the save_config()
+function for all builtins and plugins will be called.
+<p>
+Note that the user_config file is always written after all apply_config()
+functions are called, so there is no need to call this
+from inside those functions.  The apply_config() functions
+are always called when the main
+config window <b>Apply</b> or <b>OK</b> buttons are clicked.
+<p>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_disable_plugin_connect(GkrellmMonitor *mon, void (*func)());
+</pre></td></tr></table>
+<p>
+Normally when a plugin is disabled, the only clue the plugin gets that
+this has happened is that its update function stops being called.  This is
+adequate for plugins that simply monitor by reading some data, but plugins
+that additionally are designed to control some resource can connect to
+the disable event so they may free the resource.  The connect call should
+be made in the create_plugin() function.
+<p>
+When a plugin is enabled, its create function will be called.
+So if the disable plugin function will reset a flag, then the create function
+can know when to re-acquire any resources.
+<p>
+
+
+<a name="ALERT_FUNCTIONS">
+<hr>
+<h4><center>GkrellmAlert Functions</center></h4>
+This
+<a href="Plugins/gkrellm2-demos/demo-alert.c"
+name="demo-alert.c">demo-alert.c </a>
+is commented to give a tutorial overview of alerts in GKrellM.
+<p>
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GkrellmAlert  *gkrellm_alert_create(GkrellmPanel *p, gchar *name, gchar *unit_string,
+        gboolean check_high, gboolean check_low, gboolean do_updates,
+        gfloat max_high, gfloat min_low,
+        gfloat step0, gfloat step1, gint digits);
+</pre></td></tr></table>
+<p>
+Allocates, initializes, and returns a pointer to an alert structure.
+The alert will not get triggered until it has been activated
+in one of two ways:  the user applies an alert
+config window for the alert which sets alert trigger values, or
+<b>gkrellm_alert_set_triggers()</b> is
+called to set the values for a hardwired alert.
+NOTE: if a config window for the alert
+is opened and the user does not initially activate the alert or if
+he destroys the alert, the pointer to the alert will be reset to NULL.
+This way you can always check the value of the alert pointer for NULL to
+know if the alert is active.
+So, typically you would have a Gtk button callback
+in your plugin config window which would check an alert pointer for NULL
+and if so, then initialize it with <b>gkrellm_alert_create()</b>.
+Then connect callbacks to the alert and call <b>gkrellm_alert_config_window()</b>.
+<br>
+<i>unit_string</i> - identifies the alert units.<br>
+<i>check_high</i> - TRUE if the alert is to have upper limits.<br>
+<i>check_low</i> - TRUE if the alert is to have lower limits.<br>
+<i>do_updates</i> - TRUE to have the alert decals automatically drawn
+to the screen.  FALSE if your update routine calls <b>gkrellm_draw_panel_layers()</b>
+every timer_tick anyway and you want to be efficient.<br>
+The alarm or warning values are selected with a spin button which is
+created using the
+<i>max_high, min_low, step0, step1, digits</i> arguments.
+<p>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void   gkrellm_alert_dup(GkrellmAlert **a_dst, GkrellmAlert *a_src);
+</pre></td></tr></table>
+<p>
+Duplicate all <i>a_src</i> alert settings except for callback connections
+into <i>a_dst</i>.
+<p>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void  gkrellm_alert_set_triggers(GkrellmAlert *alert,
+                        gfloat high_alarm, gfloat high_warn,
+                        gfloat low_warn, gfloat low_alarm);
+</pre></td></tr></table>
+<p>
+Activate an alert and set the trigger values.  This would be called to
+implement a simple hardwired alert for which there is no user config.
+<p>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void  gkrellm_alert_destroy(GkrellmAlert **alert);
+</pre></td></tr></table>
+<p>
+Destroys an alert and its config.  <i>*alert</i> is updated to NULL.
+<p>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void  gkrellm_check_alert(GkrellmAlert *alert, gfloat value);
+</pre></td></tr></table>
+<p>
+Compare <i>value</i> to the configured alert trigger values
+and trigger a warning or alarm alert if needed.
+<p>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void  gkrellm_reset_alert(GkrellmAlert *alert);
+void  gkrellm_reset_alert_soft(GkrellmAlert *alert);
+</pre></td></tr></table>
+<p>
+Turns an alert off.  The alert will be retriggered at the next check
+if alert conditions still exist.  Use <b>gkrellm_reset_alert_soft()</b>
+if you are turning off the alert for some temporary reason such as to
+manage some panel drawing.  This will prevent unwanted extra alarm or
+warn command execution when if the alarm is retriggered at the next check.
+<p>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void  gkrellm_reset_panel_alerts(GkrellmPanel *p);
+</pre></td></tr></table>
+<p>
+Resets all alerts in a panel.
+<p>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void  gkrellm_freeze_alert(GkrellmAlert *alert);
+void  gkrellm_thaw_alert(GkrellmAlert *alert);
+</pre></td></tr></table>
+<p>
+Alert triggering may be disabled and re-enabled with these
+functions.
+<p>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void  gkrellm_alert_is_activated(GkrellmAlert *alert);
+</pre></td></tr></table>
+<p>
+Returns TRUE if an alert has been configured.
+<p>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void  gkrellm_alert_trigger_connect(GkrellmAlert *alert, void (*func)(), gpointer data);
+void  gkrellm_alert_config_connect(GkrellmAlert *alert, void (*func)(), gpointer data);
+void  gkrellm_alert_config_create_connect(GkrellmAlert *alert,
+                            void (*func)(), gpointer data);
+void  gkrellm_alert_command_process_connect(GkrellmAlert *alert,
+                            void (*func)(), gpointer data);
+
+</pre></td></tr></table>
+<p>
+These connect the plugins callback functions for alert triggering or
+alert config events.<br>
+An alert_trigger event occurs when <b>gkrellm_check_alert()</b> is called and a
+limit test triggers either an alarm or warning.<br>
+An alert_config event occurs when the user applies or deletes an alert
+config window.  The alert is being applied if the alert is activated and
+the alert is being deleted if the alert is not activated.<br>
+The callback prototype for these first two events is:
+<pre>
+    (*func)(GkrellmAlert *a, gpointer data);
+</pre>
+An alert_config_create event occurs when an alert config window is created
+and may be used to add custom options to an alert config window.  The
+callback prototype is:
+<pre>
+    (*func)(GkrellmAlert *a, GtkWidget *vbox, gpointer data);
+</pre>
+A alert_command_process event occurs when an alarm or warning command is about
+to be executed and may be used to process the command string.  In the callback,
+a src command string is expected to be copied to a dst buffer of len bytes
+with possible expansions or substitutions.  The callback prototype is:
+<pre>
+    (*func)(GkrellmAlert *a, gchar *src, gchar *dst, gint len);
+</pre>
+<p>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void  gkrellm_render_default_alert_decal(GkrellmAlert *alert);
+</pre></td></tr></table>
+<p>
+When an alert is triggered, the callback in a plugin should set the
+position and size of the alert decal to be displayed and should render
+the image to be used.  The image rendering should be done with
+this function unless the plugin uses its own alert image.
+<p>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+gboolean  gkrellm_alert_decal_visible(GkrellmAlert *alert);
+</pre></td></tr></table>
+<p>
+Returns TRUE is the alert decal for the given alert is visible.  It will
+be visible if the alert is currently triggered.
+<p>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void  gkrellm_alert_config_window(GkrellmAlert **alert);
+</pre></td></tr></table>
+<p>
+Creates an alert config window for the <i>alert</i>.
+<p>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void  gkrellm_alert_window_destroy(GkrellmAlert **alert);
+</pre></td></tr></table>
+<p>
+Destroys the alert config window created by <b>gkrellm_alert_config_window()</b>.
+<p>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void  gkrellm_save_alertconfig(FILE *f, GkrellmAlert *alert, gchar *mon_keyword, gchar *name);
+void  gkrellm_load_alertconfig(GkrellmAlert **ap, gchar *config_line);
+</pre></td></tr></table>
+<p>
+Saves all the settings in the  structure <i>alert</i> into the
+file referenced by <i>f</i>.  <i>mon_keyword</i> is the config word
+you are using in your save_plugin_config() routine.  <i>name</i> is an
+extra identifier which will be written if it is not NULL.  It should
+identify which alert is being saved if your plugin has multiple alerts.
+<p>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void  gkrellm_load_alertconfig(GkrellmAlert **ap, gchar *config_line);
+</pre></td></tr></table>
+<p>
+The <i>ap</i> arg is the address of a GkrellmAlert pointer which
+may be initialized to point to a GkrellmAlert struct or may be NULL.  If
+it is NULL, a GkrellmAlert struct will be automatically allocated and
+<i>*ap</i> will be updated to point to it.
+Then the <i>config_line</i> is parsed for values to initialize the
+GkrellmAlert structure to the same state as was written by
+<b>gkrellm_save_alertconfig()</b>.
+<p>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void   gkrellm_alert_set_delay(GkrellmAlert *alert, gint delay);
+</pre></td></tr></table>
+<p>
+Set the delay in seconds that an alert limit condition must exist before
+an alert will be triggered.  Use this for alerts which do not have a user
+config.
+<p>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void   gkrellm_alert_delay_config(GkrellmAlert *alert, gint step,
+                     gint high, gint low);
+</pre></td></tr></table>
+<p>
+Set the <i>high</i> and <i>low</i> alert delay range limits which can
+be set by the user in an alert config window.  The <i>step</i> value
+should be the interval in seconds between calls to <b>gkrellm_check_alert()</b>
+for this alert.
+<p>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void   gkrellm_alert_commands_config(GkrellmAlert *alert,
+                     gboolean alarm, gboolean warn);
+</pre></td></tr></table>
+<p>
+Controls if there will be a configuration present for alarm and
+warn commands.
+<p>
+
+
+
+
+<a name="STYLE_FUNCTIONS">
+<hr>
+<h4><center>GkrellmStyle and GkrellmTextstyle Functions</center></h4>
+
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+gint		gkrellm_add_chart_style(GkrellmMonitor *mon, gchar *name);
+gint		gkrellm_add_meter_style(GkrellmMonitor *mon, gchar *name);
+</pre></td></tr></table>
+<p>
+Create a style for a chart or meter monitor
+and return a style_id value
+that can be used to access text parameters,  krell parameters, and
+theme images for the style.
+These calls must be made in the gkrellm_init_plugin() routine so the style will
+exist when themes are loaded.  Creating a plugin style should be
+considered a good thing (close to mandatory).
+<p><i>mon</i> is a pointer to the GkrellmMonitor
+structure that must be returned by the gkrellm_init_plugin() routine.
+<p><i>name</i> is a string that should not have any spaces and should not
+conflict with style names for any other plugin or builtin monitor.  It is
+the name used to link theme settings to your plugin and is used as the
+theme subdirectory name and as the theme gkrellmrc style name qualifier in
+StyleChart, StylePanel, or StyleMeter.
+<p>
+For example, if you have a plugin foo and make the call
+gkrellm_add_meter_style(mon, "foo"), then a theme author can put in
+the gkrellmrc the line:<br>
+&nbsp &nbsp &nbsp StyleMeter   foo.textcolor = orange black shadow<br>
+which would set the text color for a plugin to orange independent of other
+monitors.  Of course the plugin code would first have to access this
+color (using gkrellm_meter_textstyle(style_id)).
+<p>
+Images (backgrounds, krells, etc) customized for a plugin will be searched
+for in each theme directory under a subdirectory of the same
+<i>name</i> as passed to <b>gkrellm_add_meter_style()</b> or
+<b>gkrellm_add_chart_style()</b>.
+These images
+can then be accessed in a plugin by passing the returned style_id to
+gkrellm_xxx_style(),
+gkrellm_xxx_textstyle(), and gkrellm_xxx_piximage() functions (see below).
+<p>
+A plugin should make only a single call to either
+<b>gkrellm_add_meter_style()</b> or <b>gkrellm_add_chart_style()</b>.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+gint		gkrellm_lookup_chart_style_id(gchar *name);
+gint		gkrellm_lookup_meter_style_id(gchar *name);
+</pre></td></tr></table>
+<p>
+Use these functions to look up a style_id value by name if you have not
+saved the value returned from your gkrellm_add_xxx_style() calls.
+They also can be used to get style_id values for other monitors
+in GKrellM if the <i>name</i> argument is the style name as registered by
+<b>gkrellm_add_chart_style()</b> or <b>gkrellm_add_meter_style()</b> in the other monitors.
+With plugins having their own style_id, using styles set for other monitors
+should be avoided.  At least using a borrowed style should only be a
+fallback after checking that a theme author has no customizations for
+your plugin with <b>gkrellm_style_is_themed()</b>.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void	gkrellm_copy_style_values(GkrellmStyle *src, GkrellmStyle *dst);
+</pre></td></tr></table>
+<p>
+Copies structure values from <i>dst</i> to <i>src</i>.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+gboolean	gkrellm_style_is_themed(GkrellmStyle *style, gint query);
+</pre></td></tr></table>
+<p>
+If <i>query</i> is zero, return TRUE if there have been
+any custom settings for the <i>style</i> in the gkrellmrc.  Set <i>query</i>
+to a bitwise ored set of GKRELLMSTYLE flags to check if specific style
+parameters have been themed in the gkrellmrc.  For example:<br>
+&nbsp &nbsp gkrellm_style_is_themed(style, GKRELLMSTYLE_KRELL_YOFF);<br>
+will return TRUE only if the krell_yoff for <i>style</i> was set in the
+gkrellmrc.  See gkrellm.h for the set of GKRELLMSTYLE values.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GkrellmStyle		*gkrellm_meter_style(gint style_id);
+GkrellmStyle		*gkrellm_panel_style(gint style_id);
+GkrellmStyle		*gkrellm_chart_style(gint style_id);
+GkrellmStyle		*gkrellm_krell_slider_style(void);
+</pre></td></tr></table>
+<p>
+These functions return pointers to GkrellmStyle structures appropriate for
+use with a meter or panel area, a chart, or the krell slider.
+The style_id argument should usually be a value returned from
+a <b>gkrellm_add_chart_style()</b> or <b>gkrellm_add_meter_style()</b> call, but
+could be DEFAULT_STYLE_ID or a looked up style_id value for other monitors.
+<p>
+<br>
+
+<a name="GKRELLM_STYLE_BY_NAME">
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GkrellmStyle		*gkrellm_meter_style_by_name(gchar *style_name);
+GkrellmStyle		*gkrellm_panel_style_by_name(gchar *style_name);
+GkrellmStyle		*gkrellm_chart_style_by_name(gchar *style_name);
+</pre></td></tr></table>
+<p>
+If <i>style_name</i> is the same name as registered with a
+<b>gkrellm_add_xxx_style()</b> call, then these functions return
+the associated GkrellmStyle.  Additionally, <i>style_name</i> may add a
+".custom_name" extension to access a possibly themed custom style.
+<p>
+For example, if a plugin made the call <b>gkrellm_add_meter_style("frump")</b>
+then it can make the call <b>gkrellm_meter_style_by_name("frump")</b>
+to get its default style.  And it can also make the call
+<b>gkrellm_meter_style_by_name("frump.gas-gauge")</b> which will return
+a custom "gas-gauge" style if it exists, otherwise it will return the
+default "frump" style.  The gas-gauge style will exist if the themer
+has put in his gkrellmrc a line like:
+<p>
+&nbsp &nbsp &nbsp StyleMeter   frump.gas_gauge.krell_left_margin = 10
+<p>
+This provides for using custom styles which can easily be themed
+transparently to your code.
+It is probably most convenient when you are using extra krells, but
+you could use any of the custom Style parameters in a plugin defined way.
+Just document their use in a Themes file so a theme author will know about
+them.  The convenience of this is that you can eliminate many
+<b>gkrellm_get_gkrellmrc_string()</b> and
+<b>gkrellm_get_gkrellmrc_integer()</b> calls and allow
+theme authors to set the custom Style
+values using the familiar StyleMeter or StylePanel syntax.
+<p>
+Coding example: your plugin meter with a "frump" style name needs to create an
+extra krell for which you #include a default image krell_gas_gauge.xpm
+requiring some default
+Style values.  But you want to allow a themable krell image with themed
+specified Style values in the gkrellmrc.  You document
+in a Themes file that a themer may make the custom krell image
+frump/krell_gas_gauge.png and may have custom style lines in his gkrellmrc
+like:
+<p>
+&nbsp &nbsp &nbsp StyleMeter   frump.gas_gauge.krell_left_margin = 10<br>
+&nbsp &nbsp &nbsp StyleMeter   frump.gas_gauge.krell_depth = 4<br>
+&nbsp &nbsp &nbsp StyleMeter   frump.gas_gauge.krell_expand = bar-mode<br>
+<p>
+Code to implement this could be:
+
+<center><table width=80% border=1><tr><td bgcolor=#b0b0a8><pre>
+#include "krell_gas_gauge.xpm"
+
+static GkrellmKrell *
+default_or_themed_krell(GkrellmPanel *p, gchar *name, GkrellmPiximage *im, gint yoff,
+    gint depth, gint x_hot, gint expand, gint left_margin, gint right_margin)
+    {
+    GkrellmKrell   *k;
+    GkrellmStyle   *style;
+
+    /* Work with a copy since we may modify the style.  If the themer has not
+    |  made custom settings for this frump plugin, my defaults will be used.
+    */
+    style = gkrellm_copy_style(gkrellm_meter_style_by_name(name));
+    gkrellm_set_style_krell_values_default(style, yoff, depth, x_hot,
+                expand, 1, left_margin, right_margin);
+    k = gkrellm_create_krell(p, im, style);
+
+    /* Unlike the style pointer passed to gkrellm_panel_configure(), the krells
+    |  don't need the style to persist.
+    */
+    g_free(style);
+    return k;
+    }
+
+create_plugin()
+    {
+    GkrellmKrell  *krell_gas_gauge;
+    GkrellmPiximage   *im = NULL;
+
+    ...
+    gkrellm_load_piximage("krell_gas_gauge", krell_gas_gauge_xpm, &im, "frump");
+    krell_gas_gauge = default_or_themed_krell(p, "frump.gas_gauge", im
+                    3, 1, 59, KRELL_EXPAND_LEFT, 16, 0);
+    if (im)
+        gkrellm_destroy_piximage(im);
+    ...
+    }
+</pre></td></tr></table></center>
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GkrellmTextstyle 	*gkrellm_chart_textstyle(gint style_id);
+GkrellmTextstyle 	*gkrellm_panel_textstyle(gint style_id);
+GkrellmTextstyle 	*gkrellm_meter_textstyle(gint style_id);
+GkrellmTextstyle 	*gkrellm_chart_alt_textstyle(gint style_id);
+GkrellmTextstyle 	*gkrellm_panel_alt_textstyle(gint style_id);
+GkrellmTextstyle 	*gkrellm_meter_alt_textstyle(gint style_id);
+</pre></td></tr></table>
+<p>
+These functions return pointers to the GkrellmTextstyle structures appropriate
+for use on a chart, panel or meter area.
+The style_id argument should usually be a value returned from
+a <b>gkrellm_add_chart_style()</b> or <b>gkrellm_add_meter_style()</b> call, but
+could be DEFAULT_STYLE_ID or a looked up style_id value for other monitors.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GkrellmPiximage	*gkrellm_bg_chart_piximage(gint style_id);
+GkrellmPiximage	*gkrellm_bg_panel_piximage(gint style_id);
+GkrellmPiximage	*gkrellm_bg_meter_piximage(gint style_id);
+</pre></td></tr></table>
+<p>
+These functions return pointers to the theme image backgrounds for
+the various background areas in GKrellM.
+The style_id argument should usually be a value returned from
+a <b>gkrellm_add_chart_style()</b> or <b>gkrellm_add_meter_style()</b> call, but
+could be DEFAULT_STYLE_ID or a looked up style_id value for other monitors.
+<p>
+<br>
+
+
+<a name="IMAGE_FUNCTIONS">
+<hr>
+<h4><center>Accessing GKrellM Images and Pixmaps Functions</center></h4>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GkrellmPiximage	*gkrellm_krell_panel_piximage(gint style_id);
+GkrellmPiximage	*gkrellm_krell_meter_piximage(gint style_id);
+GkrellmPiximage	*gkrellm_krell_slider_piximage(void);
+</pre></td></tr></table>
+<p>
+These functions return pointers to the theme krell images.
+The style_id argument should usually be a value returned from
+a <b>gkrellm_add_chart_style()</b> or <b>gkrellm_add_meter_style()</b> call, but
+could be DEFAULT_STYLE_ID or a looked up style_id value for other monitors.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GkrellmBorder	*gkrellm_bg_slider_border(gint);
+GkrellmBorder	*gkrellm_bg_timer_border(void);
+</pre></td></tr></table>
+<p>
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GdkPixmap	*gkrellm_data_in_pixmap(void);
+GdkPixmap	*gkrellm_data_in_grid_pixmap(void);
+GdkPixmap	*gkrellm_data_out_pixmap(void);
+GdkPixmap	*gkrellm_data_out_grid_pixmap(void);
+</pre></td></tr></table>
+<p>
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GdkPixmap	*gkrellm_decal_misc_pixmap(void);
+GdkBitmap	*gkrellm_decal_misc_mask(void);
+</pre></td></tr></table>
+<p>
+<p>
+<br>
+
+<a name="GK_FUNCTIONS">
+<hr>
+<h4><center>Accessing GKrellM Data </center></h4>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GkrellmTicks  *gkrellm_ticks(void)
+</pre></td></tr></table>
+<p>
+Returns a pointer to the GK ticks structure which has the timer tick members
+timer_ticks, second_tick, and so on.   Plugin code will be more portable
+to other environments such as Windows if you use this function and make
+refrences such as pGK->second_tick rather than direct GK references like
+GK.second_tick.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+gint    gkrellm_plugin_debug(void)
+</pre></td></tr></table>
+<p>
+Returns the debug value which a user can set with the -debugN option.
+A plugin may hijack a particular integer value for debugging which will
+hopefully be unique to the plugin.
+<p>
+<br>
+
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GdkGC		*gkrellm_draw_GC(gint n);
+GdkGC		*gkrellm_bit_GC(gint n);
+</pre></td></tr></table>
+<p>
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GdkFont		*gkrellm_default_font(gint font_num);
+</pre></td></tr></table>
+<p>
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GdkColor	*gkrellm_white_color(void);
+GdkColor	*gkrellm_black_color(void);
+</pre></td></tr></table>
+<p>
+This returns a white or black color which may be useful for some drawing
+functions.  Do not use these to get a color to draw on a depth 1 bitmap.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+gint	gkrellm_update_HZ(void);
+void	gkrellm_allow_scaling(gboolean *allow, gint *width_ref);
+gint	gkrellm_chart_width(void);
+gchar	*gkrellm_get_theme_path(void);
+gfloat	gkrellm_get_theme_scale(void);
+</pre></td></tr></table>
+<p>
+The values returned are:
+<br>update_HZ - number of times per second update routines are called.
+<br>allow_scaling - if image scaling should be allowed at width changes.
+<br>chart_width - user set chart width in pixels.
+<br>theme_path - a pointer to the current theme (is pointer to '\0' if the
+current theme is the default theme.
+<br>theme_scale - is a user set scaling factor for decal and krell image
+sizes.
+<p>
+<br>
+
+
+
+<a name="UTILITY_FUNCTIONS">
+<hr>
+<h4><center>Misc Utility Functions</center></h4>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+gchar  *gkrellm_homedir(void);
+</pre></td></tr></table>
+<p>
+Returns a pointer to the users home directory.  A cached pointer is returned
+after the first call.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+gboolean  gkrellm_dup_string(gchar **dst, gchar *src);
+</pre></td></tr></table>
+<p>
+A very useful and safe way to duplicate strings.
+First, if <i>*dst</i> is not NULL and compares equal to
+<i>src</i>, no duplication is done and FALSE is returned.
+Otherwise, if <i>*dst</i> is not NULL it is freed with g_free().
+Finally, <i>src</i> is duplicated into <i>*dst</i> with g_strdup()
+and TRUE is returned.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+gchar   *gkrellm_make_config_file_name(gchar *dir, gchar *config);
+gchar   *gkrellm_make_data_file_name(gchar *subdir, gchar *name);
+</pre></td></tr></table>
+<p>
+Make a config file name possibly qualified with a config suffix if one of the
+alternate config options were specified on the command line.  The returned
+string is in allocated memory, so g_free() it when you are done with it.
+<p>
+<b>gkrellm_make_config_file_name()</b> returns the string "dir/config" if there
+is no config suffix.  If there is a config suffix, the returned string will
+be "dir/config-suffix" where suffix will be the command line -c argument or
+the hostname if the -force-host-config option was run.
+<p>
+<b>gkrellm_make_data_file_name()</b> returns the string
+"<homedir>/data/subdir/name"
+if there is no config suffix.  If there is a config suffix, the returned string
+will be "<homedir>/data-suffix/subdir/name".  If <i>subdir</i> or <i>name</i>
+are NULL, there will be no corresponding path component in the returned string.
+The subdir will be created if it does not exist.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+struct tm *gkrellm_get_current_time(void);
+</pre></td></tr></table>
+<p>
+Returns a pointer to a static struct tm having the current time.
+The current time is updated at each GK.second_tick.
+<p>
+<br>
+
+<a name="GKRELLM_GTK_FUNCTIONS">
+<hr>
+<h4><center>gkrellm_gtk Functions</center></h4>
+These are convenience wrapper functions around frequently used
+Gtk functions used in creating the config pages.
+<p>
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GtkWidget   gkrellm_gtk_notebook_page(GtkWidget *tabs, char *name);
+GtkWidget   gkrellm_gtk_framed_notebook_page(GtkWidget *tabs, char *name);
+</pre></td></tr></table>
+<p>
+These are useful for creating notebook pages in configuration windows.  After
+you make a notebook with<br>
+&nbsp &nbsp <i>tabs = gtk_notebook_new();</i><br>
+just call:<br>
+&nbsp &nbsp <i>vbox = gkrellm_gtk_framed_notebook_page(tabs, "Tab Name");</i><br>
+And you have a vbox inside a labeled notebook page you can put widgets in.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+gchar  *gkrellm_gtk_entry_get_text(GtkWidget **entry);
+</pre></td></tr></table>
+<p>
+Reads the text from an entry and returns a pointer to the text with
+leading white space skipped.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void gkrellm_gtk_spin_button(GtkWidget *box, GtkWidget **spin_button, gfloat value,
+        gfloat low, gfloat high, gfloat step0, gfloat step1,
+        gint digits, gint width,
+        void (*cb_func)(), gpointer data, gboolean right_align, gchar *label);
+</pre></td></tr></table>
+<p>
+This could greatly simplify your spin button creation and maybe cover 90%
+of your spin button needs.
+If <i>right_align</i> is FALSE, a spin button followed by the <i>label</i>
+is packed aligned to the left into <i>box</i>.
+If <i>right_align</i> is TRUE, the <i>label</i> followed by a spin button is
+packed aligned to the right into <i>box</i>.
+The <i>value, low, high, step0, step1</i> values are used
+for creating the adjustment.  The
+number of significant digits is set with <i>digits</i>.  If <i>width</i> is
+greater than zero it sets the pixel usize of the spin button.  If <i>data</i>
+is not NULL it will be passed to your callback <i>cb_func()</i>.
+If it is NULL, then the created gtk_spin_button_new() pointer will be passed.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void  gkrellm_gtk_check_button_connected(GtkWidget *box, GtkWidget **button,
+            gboolean active, gboolean expand, gboolean fill, gint pad,
+            void (*cb_func)(), gpointer data, gchar *label);
+</pre></td></tr></table>
+<p>
+Creates a labeled check button,
+sets its <i>active</i> state, and packs it into <i>box</i> using the Gtk
+<i>expand, fill,</i> and <i>pad</i> values.
+The <i>cb_func</i> is connected to the "clicked" signal.
+The <i>button</i> arg may be NULL if you don't need the button pointer.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void  gkrellm_gtk_button_connected(GtkWidget *box, GtkWidget **button,
+            gboolean expand, gboolean fill, gint pad,
+            void (*cb_func)(), gpointer data, gchar *label);
+ </pre></td></tr></table>
+<p>
+Creates a labeled button,
+and packs it into <i>box</i> using the Gtk
+<i>expand, fill,</i> and <i>pad</i> values.
+The <i>cb_func</i> is connected to the "clicked" signal.
+The <i>button</i> arg may be NULL if you don't need the button pointer.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GtkWidget  *gkrellm_gtk_scrolled_vbox(GtkWidget *box, GtkWidget **scr,
+           GtkPolicyType h_policy, GtkPolicyType v_policy);
+</pre></td></tr></table>
+<p>
+Returns a vbox widget put in a scrolled window with
+gtk_scrolled_window_add_with_viewport().
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GtkWidget  *gkrellm_gtk_scrolled_text_view(GtkWidget *box, GtkWidget **scr,
+           GtkPolicyType h_policy, GtkPolicyType v_policy)
+</pre></td></tr></table>
+<p>
+Returns a text widget put in a scrolled window.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_gtk_text_view_append_strings(GtkWidget *text, gchar **string, gint n_strings)
+</pre></td></tr></table>
+<p>
+This is a function you can use to get font and formatting variations
+into Info/Help pages of a plugin config.
+<i>text</i> is a GtkWidget created with <b>gkrellm_gtk_scrolled_text_view()</b>,
+<i>string</i> is a
+pointer to an array of string pointers.
+<p>
+Put formatting codes
+<ul>
+<li>&lt;h&gt; for a slightly larger font heading</li>
+<li>&lt;b&gt; for bold</li>
+<li>&lt;i&gt; for italic</li>
+<li>&lt;ul&gt; for underlined text</li>
+</ul>
+in front of strings like this:
+<center><table width=80% border=1><tr><td bgcolor=#b0b0a8><pre>
+gchar   *info_text[] =
+    {
+    "&lt;b&gt;The first ",
+    "two words of this line are bold\n"
+    "and the last two words of this line ",
+    "&lt;i&gt;are italic\n"
+    };
+...
+GtkWidget *text;
+
+...
+text = gkrellm_gtk_scrolled_text_view(box, NULL, GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+gkrellm_gtk_text_view_append_strings(text, info_text, sizeof(info_text) / sizeof(gchar *));
+...
+</pre></td></tr></table></center>
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void    gkrellm_gtk_text_view_append(GtkWidget *text, gchar *string);
+</pre></td></tr></table>
+<p>
+This function is used similarly to <b>gkrellm_gtk_text_view_append_strings()</b>
+except it will add a single string instead of an array of strings.
+<p>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+GtkWidget  *gkrellm_gtk_framed_vbox(GtkWidget *box, gchar *label, gint frame_border_width,
+           gboolean frame_expand, gint vbox_pad, gint vbox_border_width)
+GtkWidget  *gkrellm_gtk_framed_vbox_end(GtkWidget *box, gchar *label, gint frame_border_width,
+           gboolean frame_expand, gint vbox_pad, gint vbox_border_width)
+</pre></td></tr></table>
+<p>
+These return a vbox widget packed into a labeled frame.  The frame is packed
+with gtk_box_pack_start() or gtk_box_pack_end()
+into the supplied <i>box</i> with <i>frame_expand</i> expand and fill values.
+<br>
+<i>frame_border_width</i> - border around outside of frame.<br>
+<i>vbox_pad</i> - pad between widgets to be packed in the returned vbox.<br>
+<i>vbox_border_width</i> - border between returned vbox and frame.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+void   gkrellm_gtk_alert_button(GtkWidget *box, GtkWidget **button,
+                     gboolean expand, gboolean fill, gint pad,
+                     gboolean pack_start, void (*cb_func)(), gpointer data);
+</pre></td></tr></table>
+<p>
+Create a gtk button with an alert icon and label.
+<p>
+<br>
+
+
+<a name="SERVER_FUNCTIONS">
+<hr>
+<h4><center>Client/Server Functions</center></h4>
+The demo5 plugin in the 
+<a href="Plugins/gkrellm2-demos.tar.gz" name="gkrellm2-demos.tar.gz">
+gkrellm2-demos.tar.gz </a> tarball is fully commented and intended to
+be the tutorial on writing a client/server capable plugin.  Look at the
+demo5 README to see how to test a client/server plugin on a single
+machine.
+<p>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+gboolean	gkrellm_client_mode(void);
+void		gkrellm_client_plugin_get_setup(gchar *key_name,
+					void (*setup_func_cb)(gchar *str));
+void		gkrellm_client_plugin_serve_data_connect(GkrellmMonitor *mon,
+					gchar *key_name, void (*func_cb)(gchar *line));
+void		gkrellm_client_plugin_reconnect_connect(gchar *key_name,
+					void (*func_cb)());
+</pre></td></tr></table>
+<p>
+These are functions for client/server capable plugins to use in the client
+module
+part of the plugin.  Get these function prototypes by including gkrellm.h.
+See demo5.
+<p>
+<br>
+
+<table width=90% border=1><tr><td bgcolor=#b0b0a8><pre>
+  /* gkrellmd serve data functions used by builtins and plugins.
+  */
+void		gkrellmd_plugin_serve_setup(GkrellmdMonitor *mon,
+						gchar *name, gchar *line);
+void		gkrellmd_need_serve(GkrellmdMonitor *mon);
+void		gkrellmd_set_serve_name(GkrellmdMonitor *mon, const gchar *name);
+void		gkrellmd_serve_data(GkrellmdMonitor *mon, gchar *line);
+void		gkrellmd_add_serveflag_done(gboolean *);
+gboolean	gkrellmd_check_client_version(GkrellmdMonitor *mon,
+						gint major, gint minor, gint rev);
+
+  /* Small set of useful functions.
+  */
+void		gkrellmd_free_glist_and_data(GList **list_head);
+gchar		*gkrellmd_dup_token(gchar **string, gchar *delimeters);
+gboolean	gkrellmd_dup_string(gchar **dst, gchar *src);
+</pre></td></tr></table>
+<p>
+These are functions for client/server capable plugins to use in
+the server module
+part of the plugin.  Get these function prototypes by including gkrellmd.h.
+See demo5.
+<p>
+<br>
+
+
+
+<hr>
+	<address>
+	<p align=center>
+	<a href="http://www.gkrellm.net" name="www.gkrellm.net">GKrellM Home</a>
+	<br>
+	Bill Wilson <A HREF="mailto:bill--at--gkrellm.net">bill--at--gkrellm.net</A>
+	<br>
+	</p>
+	</address>
+
+</body>
+</html>
+
+
