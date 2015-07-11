@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>PiKrellCam</title>
+    <link rel="stylesheet" href="pikrellcam.css" />
+  </head>
+
+  <body background="images/paper1.png">
+	<div class='text-center'>
+		  <div class='text-shadow-large' style='text-decoration: none;'>
+		    PiKrellCam - OSD Motion Detect Program
+		  </div>
+	</div>
+
+	<p><div class='text-center'>
+	<img src="images/email.jpg" alt="PiKrellCam Image"
+			style="width:640px; border:6px groove silver;">
+	</div></p>
+
+  <div style="margin-left:10%; margin-right:10%;">
+<h3>Overview</h3>
+<p>
+PiKrellCam is a video recording motion detect program with an OSD web
+interface that detects motion using the Raspberry Pi camera motion vectors.
+While the idea for PiKrellCam came from Silvan Melchior's RaspiMJPEG,
+the PiKrellCam program is a structural redesign and a rather
+different approach to the web interface.
+PiKrellCam's architecture is built around full featured internal motion
+detection without any dependence on an external motion detect program
+and it centralizes built in functionality for simplified
+web page interaction.
+</p>
+
+<h4>Features</h4>
+	<ul>
+  	<li>
+	Camera mjpeg streaming to a web displaying OSD user interface.
+	Text, graphics and motion vectors are overlay drawn on the mjpeg stream.
+	</li>
+  	<li>
+	Pi camera MMAL motion vector detection and motion video recording with
+	configurable one second resolution pre capture, post capture
+	and event gap times.
+	</li>
+  	<li>
+	Built in motion start event, end event and motion preview jpeg
+	save event command execution.  Email a motion event jpeg or scp the
+	motion video to one or more off site locations.  The above image is a jpeg
+	PiKrellCam emailed to me when it motion detected one of my roadrunners.
+	</li>
+  	<li>
+	Motion detect regions of any number, size and position that are
+	real time graphically edited from the web page.  Motion region
+	configurations can be saved or loaded by name.
+	</li>
+  	<li>
+	Real vector processing of the camera motion vectors with multiple passes
+	to get good motion detect sensitivity and noise immunity.
+	</li>
+  	<li>
+	Command scheduling for shell scripts, FIFO commands or system commands
+	is built in. Commands can be time and frequency scheduled from a
+	dynamically reloaded arbitrary length list of commands.
+	</li>
+  	<li>
+	Video record with pause function and timelapse with hold function for
+	flexible record timings that can be scheduled from the command list.
+	</li>
+	</ul>
+<p>
+The pikrellcam program, source, scripts, and www web files are all
+installed under /home/pi in the pikrellcam sub directory and the
+program runs as the user pi.  The goal is that the install
+be as localized as possible, however, the media directory may optionally
+be relocated to some other convenient location.
+<p>
+This video shows the PiKrellCam OSD:
+<div class='text-center'><p>
+<iframe width="512" height="313"
+src="http://www.youtube.com/embed/zyqMqTK994U?autoplay=0&controls=1">
+</iframe> 
+</p></div>
+
+
+<p>
+And this is a motion detect video PiKrellCam recorded.  It demonstrates
+the pre capture and post capture times which are both set to 5 seconds.
+Roadrunners don't really fly, but they can hop "fly" into a tree and then
+glide down from a tree branch which is what this roadrunner did:
+<div class='text-center'><p>
+<iframe width="512" height="313"
+src="http://www.youtube.com/embed/acA-gVPWnuw?autoplay=0&controls=1">
+</iframe> 
+</p></div>
+
+
+<h3>Motion Detection</h3>
+<p>
+The Pi camera gives us vectors, so PiKrellCam processes vectors and does
+not treat them as if they were scalars.  The interesting result is that
+detecting motion gets reduced to object position and movement detection.
+</p>
+<p>
+The program makes a few passes over the vector array.  First, as a noise
+filter for what I call sparkles, it removes vectors which pass the magnitude
+limit test but have no adjacent passing vectors.
+Then it builds composite motion region vectors and uses dot product to
+filter vectors for direction to get better final composite vectors.
+The direction filtering requires individual vectors to have the same
+direction as the overall composite vector to within a few degree spread.
+Failing vectors are rejects which are effective in identifying noisy frames.
+
+Final vector density tests must be passed before a motion event
+is considered valid and
+the end result is that motion detection can be sensitive
+and yet have good noise immunity.  PiKrellCam can run with really low
+composite vector magnitude/count limits and a setting of 5/4
+is reasonable.
+<p>
+However, to run with low settings there should be good placement of motion regions
+to avoid detecting wind blown trees or tall grass.
+With PiKrellCam this is a quick real time graphical motion region edit
+from the web page that can be done in minutes.
+<p>
+Motion detection is a tradeoff of distance, size and speed of an object,
+but to give you an idea of PiKrellCam's sensitivity, the roadrunner in the
+above emailed jpeg was about 40 feet away and has been detected farther away..
+A slow walking animal like a cat might need to be a bit closer and
+human detection, depending on walking speed and angle across the field of
+view, can be over 120 feet with a 5/4 setting.
+This is with the camera resolution at 1080p narrow field of view.
+I think the immunity to sun/cloud light level changes is pretty
+good.
+</p>
+
+<h3>Install</h3>
+
+<p>
+Currently the install supports nginx as the web server because for it there
+is no special setup required for a web site outside of /var/www.
+An apache option should be possible, but I haven't looked at working
+out the configuration for it.
+</p>
+
+<p>
+The install sequence is:
+</p>
+
+<center><table width=90% border=1><tr><td bgcolor=#c0c0b8><font size="+1">
+<pre>
+  $ cd /home/pi
+  $ git clone https://github.com/billw2/pikrellcam
+</pre>
+</font></td></tr></table></center>
+
+<p>
+After the PiKrellCam git clone in /home/pi, everthing is in place and
+the www files will not be relocated to /var/www.
+Next, run the install script.  This will apt-get install Raspbian packages PiKrellCam
+will need for its runtime and will present the option to set
+the nginx web server port, an option for PiKrellCam to autostart at boot
+and a password option for the web site.
+</p>
+<center><table width=90% border=1><tr><td bgcolor=#c0c0b8><font size="+1">
+<pre>
+  $ cd pikrellcam
+  $ ./install-pikrellcam.sh
+</pre>
+</font></td></tr></table></center>
+
+
+<p>
+The pikrellcam program can be run from a terminal or a web browser
+or autostarted on boot if that is enabled in the install script.
+To start it from a browser, open a web browser to the Pi:
+</p>
+
+<center><table width=90% border=1><tr><td bgcolor=#c0c0b8><font size="+1">
+<pre>
+If in the install script you left the port number at the default 80:
+
+    http://your_pi
+
+or if you set a non standard port:
+
+    http://your_pi:port_number
+</pre>
+</font></td></tr></table></center><p>
+
+Open the web page System panel (click on it) and click the "Start PiKrellCam" button.
+
+<h3>Upgrading</h3>
+<center><table width=90% border=1><tr><td bgcolor=#c0c0b8><font size="+1">
+<pre>
+  $ cd /home/pi/pikrellcam
+  $ git pull origin
+</pre>
+</font></td></tr></table></center><p>
+
+Then from the web page, reload to pick up any web page changes.
+If there was a new pikrellcam binary, from the web page stop then start
+pikrellcam.
+
+
+<h3>Configuration</h3>
+Read through the configuration files in ~/.pikrellcam and the files in the scripts
+directory to get an idea of what can be configured.
+
+<h4>Configuration files in ~/.pikrellcam</h4>
+<ul>
+	<li>
+		pikrellcam.conf - edit this file to set motion event commands, filename templates, and
+		directories.  Many other configuration variables in this file can be set
+		from the web interface.  If you edit this file, you should stop pikrellcam
+		and restart it to pick up the changes.
+	</li>
+	<li>
+		at-commands.conf - edit this file to set scheduled commands at a
+		particular time and frequency.  If you edit this file, it will be
+		automatically reloaded into pikrellcam and you do not need to restart.
+	</li>
+	<li>
+		motion-regions.conf - it's difficult to hand edit this file.  Just
+		graphically adjust your motion regions through the web interface and save.
+		You can save name quailified region configurations which will be
+		named motion-regions-name.conf.  The special name "default" references
+		the default file motion-regions.conf.
+	</li>
+</ul>
+
+
+<h4>Configuration Notes:</h4>
+<ul>
+	<li>
+	While the www directory itself is fixed, the media directory can be relocated
+	from its <nobr>/home/pi/pikrellcam/media</nobr> default to something like
+	<nobr>/home/pi/media</nobr>, <nobr>/mnt/media</nobr> or even
+	<nobr>/tmp/media</nobr> which with /tmp as a tmpfs can be a useful
+	special case (limited space) configuration.
+	For this, edit media_dir in pikrellcam.conf, restart and the web page
+	link to the new media directory will be automatically updated.
+	</li>
+	<li>
+	If you have a flash drive plugged in that you want automatically
+	mounted on the media directory for storing videos, stills and timelapse, edit
+	scripts/startup and set the MOUNT_DISK variable.  The mounting will automatically
+	track the media_dir in pikrellcam.conf should you change it.  If media_dir
+	is in a tmpfs, it will not be mounted.
+	</li>
+	<li>
+	If you want motion detect videos immediately archived to another machine
+	you can edit scripts/motion-end and have pikrellcam scp the videos to
+	anywhere.  To enable scp copying, put your machine information into the
+	script and enable the on_motion_end command in pikrellcam.conf.
+	 But read the warning about ssh authentication.
+	</li>
+	<li>
+	In the ~/.pikrellcam/at-commands.conf file add any commands
+	to run at a desired time and frequency.  You can set up a scheduled
+	timelapse run with hold times, motion detect on/off times
+	or complex video record times with interleaved pause/run intervals.
+	There is no limit to the number of at commands and at commands can be any
+	pikrellcam script you write, a FIFO command, or any Pi system command.
+	</li>
+	<li>
+	Edit ~/.pikrellcam/pikrellcam.conf and enable the
+	on_motion_preview_save command with your email address
+	and pikrellcam will email you a jpg of each motion detect event.
+	</li>
+	<li>
+	The on_timelapse_end command in pikrellcam.conf is pre-configured to
+	run the default timelapse-end script in the scripts directory.  This
+	script uses avconv to convert timelapse jpegs into a mp4 which is
+	saved into the videos directory and then the individual timelapse files
+	are deleted.  If you want to do something different like copy timelapse
+	files to a more powerful machine for conversion or not delete the
+	timelapse jpegs, you will have to modify the setup.<br>
+	With the default setup on a Pi 2, avconv converts 100 timelapse jpegs
+	into about a 17 second 12 MByte video in about 4 minutes.  Toggle show
+	timelapse on the OSD to monitor the converted MP4 size progress.
+	</li>
+</ul>
+
+
+<h3>Building From Source</h3>
+<p>
+To build pikrellcam, a git clone of raspberrypi/userland is not required.
+If you modify the source, building a new pikrellcam binary is:
+</p>
+<center><table width=90% border=1><tr><td bgcolor=#c0c0b8><font size="+1">
+<pre>
+   $ cd ~/pikrellcam/src
+   $ make
+
+or if on a Pi 2,
+
+   $ make -j4
+
+and the resulting binary will be up one directory:
+
+   /home/pi/pikrellcam/pikrellcam
+</pre>
+</font></td></tr></table></center><p>
+
+
+<h3>PiKrellCam Files</h3>
+
+<center><table width=95% border=1><tr><td bgcolor=#c0c0b8><font size="+1">
+<pre>
+The git clone should be done in /home/pi and creates the pikrellcam distribution directory:
+
+    /home/pi/pikrellcam/                    # pikrellcam install root
+                        pikrellcam          # pikrellcam executable
+                        src/                # pikrellcam source directory
+                        www/                # Web root in /etc/nginx/sites-available/pikrellcam
+                        www/media           # Link to the media_dir configured in pikrellcam.conf
+                        scripts/            # User scripts for pikrellcam on event or at commands
+                        scripts-dist/       # Git managed scripts. Seeds the scripts dir
+                        libkrellm/          # Local libraries needed for compiling pikrellcam
+
+
+Running the install-pikrellcam.sh script creates or alters files:
+
+    /etc/rc.local                           # Line optionally added to autostart pikrellcam
+    /etc/nginx/nginx.conf                   # Line edited to disable access_log
+    /etc/nginx/sites-available/pikrellcam   # Custom config installed for pikrellcam
+    /etc/nginx/sites-enabled/pikrellcam     # link to sites-available/pikrellcam
+    /etc/sudoers.d/pikrellcam               # Gives permission for pikrellcam to be started as
+                                            #   user pi by the web server which is user www-data.
+    /usr/local/bin/pikrellcam               # Link to executable /home/pi/pikrellcam/pikrellcam
+
+    /home/pi/.pikrellcam/                   # pikrellcam configuration files are created if they
+                        pikrellcam.conf     #   don't already exist
+                        at-commands.conf    # 
+                        motion-regions.conf #
+
+
+Running pikrellcam uses/creates these:
+(mjpeg_dir and media_dir can be changed in pikrellcam.conf)
+
+    /run/pikrellcam/                        # Default directory: mjpeg_dir for the mjpeg.jpg stream
+                        mjpeg.jpg           # The stream jpeg file
+    /home/pi/pikrellcam/media/              # Default directory: media_dir for media files
+                        videos              # Fixed videos direcotry under media_dir
+                        stills              # Fixed stills direcotry under media_dir
+                        timelapse           # Fixed timelapse direcotry under media_dir
+
+</pre>
+</font></td></tr></table></center><p>
+
+<h3>FIFO Commands</h3>
+Todo...
+</div>
+  </body>
+</html>
