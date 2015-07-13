@@ -155,7 +155,7 @@ The install sequence is:
 </font></td></tr></table></center>
 
 <p>
-After the PiKrellCam git clone in /home/pi, everthing is in place and
+After the PiKrellCam git clone in /home/pi, everything is in place and
 the www files will not be relocated to /var/www.
 Next, run the install script.  This will apt-get install Raspbian packages PiKrellCam
 will need for its runtime and will present the option to set
@@ -223,7 +223,7 @@ directory to get an idea of what can be configured.
 	<li>
 		motion-regions.conf - it's difficult to hand edit this file.  Just
 		graphically adjust your motion regions through the web interface and save.
-		You can save name quailified region configurations which will be
+		You can save name qualified region configurations which will be
 		named motion-regions-name.conf.  The special name "default" references
 		the default file motion-regions.conf.
 	</li>
@@ -359,7 +359,7 @@ The git clone should be done in /home/pi and creates the pikrellcam distribution
     /home/pi/pikrellcam/                    # pikrellcam install root
                         pikrellcam          # pikrellcam executable
                         src/                # pikrellcam source directory
-                        www/                # Web root in /etc/nginx/sites-available/pikrellcam
+                        www/                # Web root set in /etc/nginx/sites-available/pikrellcam
                         www/media           # Link to the media_dir configured in pikrellcam.conf
                         scripts/            # User scripts for pikrellcam on event or at commands
                         scripts-dist/       # Git managed scripts. Seeds the scripts dir
@@ -372,8 +372,8 @@ Running the install-pikrellcam.sh script creates or alters files:
     /etc/nginx/nginx.conf                   # Line edited to disable access_log
     /etc/nginx/sites-available/pikrellcam   # Custom config installed for pikrellcam
     /etc/nginx/sites-enabled/pikrellcam     # link to sites-available/pikrellcam
-    /etc/sudoers.d/pikrellcam               # Gives permission for pikrellcam to be started as
-                                            #   user pi by the web server which is user www-data.
+    /etc/sudoers.d/pikrellcam               # Gives permission for pikrellcam to be run as user
+                                            #   pi by the web server which is user www-data.
     /usr/local/bin/pikrellcam               # Link to executable /home/pi/pikrellcam/pikrellcam
 
     /home/pi/.pikrellcam/                   # pikrellcam configuration files are created if they
