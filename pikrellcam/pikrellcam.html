@@ -236,8 +236,8 @@ directory to get an idea of what can be configured.
 	While the www directory itself is fixed, the media directory can be relocated
 	from its <nobr>/home/pi/pikrellcam/media</nobr> default to something like
 	<nobr>/home/pi/media</nobr>, <nobr>/mnt/media</nobr> or even
-	<nobr>/tmp/media</nobr> which with /tmp as a tmpfs can be a useful
-	special case (limited space) configuration.
+	<nobr>/tmp/media</nobr> which with /tmp as a tmpfs can be a useful SD card
+	saving special case configuration as long as the limited space is managed.
 	For this, edit media_dir in pikrellcam.conf, restart and the web page
 	link to the new media directory will be automatically updated.
 	</li>
@@ -305,8 +305,53 @@ and the resulting binary will be up one directory:
 </font></td></tr></table></center><p>
 
 
-<h3>PiKrellCam Files</h3>
+<h3>Internal Commands</h3>
+Internal commands you put in the at-commands.conf file should be preceded
+by an '@' character but if echoed to the FIFO port, do not use the '@'.
+For example, here's some commands to put into the at-commands.conf if you
+wanted to timelapse something that goes on only in the mornings and
+evenings on weekdays:
 
+<p>
+<center><table width=95% border=1><tr><td bgcolor=#c0c0b8><font size="+1">
+<pre>
+Mon  7:30  "@tl_start 30"
+Mon-Fri 7:30 "@tl_hold off"
+Mon-Fri 9:00 "@tl_hold on"
+Mon-Fri 17:00 "@tl_hold off"
+Mon-Fri 18:00 "@tl_hold on"
+Fri 18:00 "@tl_end"
+</pre>
+</font></td></tr></table></center><p>
+
+So with that you will have a timelapse running off and on all week and
+will have a video produced in the videos directory Friday night (or
+Saturday morning if you are on a B+).
+<p>
+Many commands are for interaction with the web page, but some
+commands likely to be useful in at-command.conf are:
+<p>
+<center><table width=95% border=1><tr><td bgcolor=#c0c0b8><font size="+1">
+<pre>
+record [on|off]
+record_pause
+still
+tl_start period
+tl_hold
+tl_end
+motion_enable [on|off|toggle]
+motion load_regions NAME
+motion limits magnitude_limit count_limit
+</pre>
+</font></td></tr></table></center><p>
+Scripts can also write commands to the FIFO and some commands are
+specific to a script.  For example the timelapse-end script sends
+inform status that it is converting a mp4 to the FIFO.  Later I
+intend to add a generalized inform interface so scripts can send
+information to display on the OSD.
+
+
+<h3>PiKrellCam Files</h3>
 <center><table width=95% border=1><tr><td bgcolor=#c0c0b8><font size="+1">
 <pre>
 The git clone should be done in /home/pi and creates the pikrellcam distribution directory:
@@ -343,15 +388,14 @@ Running pikrellcam uses/creates these:
     /run/pikrellcam/                        # Default directory: mjpeg_dir for the mjpeg.jpg stream
                         mjpeg.jpg           # The stream jpeg file
     /home/pi/pikrellcam/media/              # Default directory: media_dir for media files
-                        videos              # Fixed videos direcotry under media_dir
-                        stills              # Fixed stills direcotry under media_dir
-                        timelapse           # Fixed timelapse direcotry under media_dir
+                        videos              # Fixed videos directory under media_dir
+                        stills              # Fixed stills directory under media_dir
+                        timelapse           # Fixed timelapse directory under media_dir
 
 </pre>
 </font></td></tr></table></center><p>
 
-<h3>FIFO Commands</h3>
-Todo...
+
 </div>
   </body>
 </html>
