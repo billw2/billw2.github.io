@@ -188,20 +188,15 @@ or if you set a non standard port:
 </pre>
 </font></td></tr></table></center><p>
 
-Open the web page System panel (click on it) and click the "Start PiKrellCam" button.
+Open the web page System panel (click on it) and click the "Start" button.
 
 <h3>Upgrading</h3>
-<center><table width=90% border=1><tr><td bgcolor=#c0c0b8><font size="+1">
-<pre>
-  $ cd /home/pi/pikrellcam
-  $ git pull origin
-</pre>
-</font></td></tr></table></center><p>
-
-Then from the web page, reload to pick up any web page changes.
-If there was a new pikrellcam binary, from the web page stop then start
-pikrellcam.
-
+After the initial command line git clone to install the PiKrellCam
+distribution, subsequent upgrades to the latest are a simple one button
+click of the Upgrade button in the System panel on the web page.
+The OSD will inform you if there was anything upgraded and if so, it's
+a good idea to reload the web page.  If there is a new binary, the OSD
+will tell you to restart the pikrellcam program.
 
 <h3>Configuration</h3>
 Read through the configuration files in ~/.pikrellcam and the files in the scripts
@@ -303,7 +298,12 @@ and the resulting binary will be up one directory:
    /home/pi/pikrellcam/pikrellcam
 </pre>
 </font></td></tr></table></center><p>
-
+However, be aware that if you modify the web or C code source, you are
+effectively creating a git branch of the PiKrellCam repository and you
+will need to know about git so that you can manage that.  You need to at
+least be aware that if you do the one button click upgrade from the web
+page any edits you have made to the source will be lost.  But edits you
+have made to user configuration or script files will not be lost.
 
 <h3>Internal Commands</h3>
 Internal commands you put in the at-commands.conf file should be preceded
