@@ -1,3 +1,49 @@
+<style>
+pre
+    {
+    font-family: monospace, "courier new", courier, serif;
+    font-size: 0.9em;
+    margin-left: 1cm;
+    border-radius: 4px;
+    color: #004668;
+    padding: 4px 8px 4px 8px;
+    border: solid #1f628d 1px;
+
+    background: #9aa1a2;
+    }
+
+p
+    {
+    margin-left: 0cm;
+    }
+
+.indent0
+    {
+    margin: 0.1cm 0cm 0.8cm 0.4cm;
+    }
+
+.indent1
+    {
+    margin: 0.1cm 0cm 0.1cm 1.0cm;
+    }
+
+.btn-control
+	{
+	-webkit-border-radius: 5;
+	-moz-border-radius: 5;
+	border-radius: 7px;
+	font-family: Arial;
+	color: #000000;
+	font-size: 1.0em;
+//	background: #9daaad;
+	background: #bac1c2;
+	padding: 3px 6px 3px 6px;
+	border: solid #1f628d 1px;
+	text-decoration: none;
+	}
+
+</style>
+
 <!DOCTYPE html>
 
 <html>
@@ -16,11 +62,12 @@
 	<p><div class='text-center'>
 	<img src="images/email.jpg" alt="PiKrellCam Image"
 			style="width:640px; border:6px groove silver;">
-	</div></p>
+	</div>
 
   <div style="margin-left:10%; margin-right:10%;">
-<h3>Overview</h3>
+
 <p>
+<span style='font-size: 1.5em; font-weight:650'>Overview</span><hr>
 PiKrellCam is a video recording motion detect program with an OSD web
 interface that detects motion using the Raspberry Pi camera motion vectors.
 While the idea for PiKrellCam came from Silvan Melchior's RaspiMJPEG,
@@ -30,7 +77,6 @@ PiKrellCam's architecture is built around full featured internal motion
 detection without any dependence on an external motion detect program
 and it centralizes built in functionality for simplified
 web page interaction.
-</p>
 
 <h4>Features</h4>
 	<ul>
@@ -95,12 +141,11 @@ src="http://www.youtube.com/embed/acA-gVPWnuw?autoplay=0&controls=1">
 </p></div>
 
 
-<h3>Motion Detection</h3>
 <p>
+<span style='font-size: 1.5em; font-weight:650'>Motion Detection</span><hr>
 The Pi camera gives us vectors, so PiKrellCam processes vectors and does
 not treat them as if they were scalars.  The interesting result is that
 detecting motion gets reduced to object position and movement detection.
-</p>
 <p>
 The program makes a few passes over the vector array.  First, as a noise
 filter for what I call sparkles, it removes vectors which pass the magnitude
@@ -132,74 +177,130 @@ view, can be over 120 feet with a 5/4 setting.
 This is with the camera resolution at 1080p narrow field of view.
 I think the immunity to sun/cloud light level changes is pretty
 good.
-</p>
-
-<h3>Install</h3>
 
 <p>
-Currently the install supports nginx as the web server because for it there
+<span style='font-size: 1.5em; font-weight: 650;'>Install</span><hr>
+The install uses nginx as the web server because for it there
 is no special setup required for a web site outside of /var/www.
-An apache option should be possible, but I haven't looked at working
-out the configuration for it.
-</p>
+<p>
+PiKrellCam is installed from a github git repository using the command line. The install
+is cloning the repository in the /home/pi directory and running the install script
+(an install for a user other than pi is possible):
+<pre>
+cd /home/pi
+git clone https://github.com/billw2/pikrellcam.git
+cd pikrellcam
+./install-pikrellcam.sh
+</pre>
+The install-pikrellcam.sh script installs needed packages and prompts for
+three things to configure:
+    <ul>
+    <li>Port number for the nginx web server
+    to listen on.  The default is 80, but an alternate non standard port number can
+    be used in which case the PiKrellCam web page would be accessed with the URL:<br>
+    &nbsp; &nbsp; &nbsp;<span style='font-weight:700'>http://your_pi:port_number</span>
+    </li>
+    <li>Auto start: if enabled a line will be added to
+    <span style='font-weight:700'>/etc/rc.local</span> so that pikrellcam will be
+    auto started at boot.  If this is not enabled, pikrellcam will need to be started from
+    the web page or from a terminal after each boot.
+    </li>
+    <li>Password protection: if set a login will be required to access the
+    PiKrellCam web pages.
+    </li>
+    </ul>
+Any time you want to change how you configured these three configurations,
+just rerun the install script.
+
 
 <p>
-The install sequence is:
-</p>
+<span style='font-size: 1.2em; font-weight: 680;'>First Usage</span>
+<div class='indent1'>
+Go to the PiKrellCam web page in your browser (omit the port number if it was left at default 80):<br>
+&nbsp; &nbsp; &nbsp;<span style='font-weight:700'>http://your_pi:port_number</span>
+    <ul>
+    <li>Expand the
+        <span style='font-weight:700'>System</span> panel and start the PiKrellCam prgram
+        by clicking the button
+        <span class='btn-control'>Start</span>
+        <br>After two or three seconds, the preview image from the camera should appear.
+        If it does not you should get in its place an error image indicating that the
+        camera could not be started.  This can happen if the camera is busy (another program
+        is using it) or if there is a problem with the ribbon cable camera connection.
+        If this happens, you should fix the issue with the camera and restart PiKrellCam.
+    </li>
+    <li> After the preview image appears, turn on motion detection by clicking the button
+        <span style='font-weight:700'>Enable:</span> <span class='btn-control'>Motion</span>
+    </li>
+    <li>The OSD then shows that motion detection is
+        <span style='font-weight:700'>ON</span>
+        and PiKrellCam is now operating with its default settings.
+    </li>
+    <li>Wait for motion to be detected and watch the OSD for the video record progress.<br>
+        After the video ends, view it by going to the Thumbs (or Videos) page by clicking:
+        <span style='font-weight:700'>Media:</span> <span class='btn-control'>Thumbs</span>
+    </li>
+    <li>On the button bar, click the buttons
+        <span style='font-weight:700'>Show:</span>
+        <span class='btn-control'>Timelapse</span>
+        <span class='btn-control'>Regions</span>
+        <span class='btn-control'>Vectors</span>
+        <br>to toggle showing information PiKrellCam can display on the OSD.
+        This information shows real time motion detection information and gives a feel
+        for motion magnitudes and counts which can be configured to tune motion detection.
+    </li>
+    <li>A basic first configuration to consider is enabling motion detection to be turned on
+        each time PiKrellCam is started.  To do this, use the OSD menu system:<br>
+        <ul>
+            <li>
+            Expand the <span style='font-weight:700'>Setup</span> panel.
+            </li>
+            <li>In the
+            <span style='font-weight:700'>Motion</span> group,
+            click the button <span class='btn-control'>Settings</span>
+            </li>
+            <li>The OSD will show a horizontal menu with
+            <span style='font-weight:700'>Startup_Motion</span> highlighted (underlined).
+            </li>
+            <li>Click the button: <span class='btn-control'>Sel</span>
+            </li>
+            <li>Turn the option ON by clicking
+            <input type="image" src="images/arrow-right.png">
+            </li>
+            <li>Finalize the startup motion new option setting by clicking:
+            <span class='btn-control'>Sel</span>
+            </li>
+            <li>Back out of the menu by clicking
+            <span class='btn-control'>Back</span>
+            </li>
+        </ul>
+    </li>
+</div>
 
-<center><table width=90% border=1><tr><td bgcolor=#c0c0b8><font size="+1">
-<pre>
-  $ cd /home/pi
-  $ git clone https://github.com/billw2/pikrellcam
-</pre>
-</font></td></tr></table></center>
 
 <p>
-After the PiKrellCam git clone in /home/pi, everything is in place and
-the www files will not be relocated to /var/www.
-Next, run the install script.  This will apt-get install Raspbian packages PiKrellCam
-will need for its runtime and will present the option to set
-the nginx web server port, an option for PiKrellCam to autostart at boot
-and a password option for the web site.
-</p>
-<center><table width=90% border=1><tr><td bgcolor=#c0c0b8><font size="+1">
-<pre>
-  $ cd pikrellcam
-  $ ./install-pikrellcam.sh
-</pre>
-</font></td></tr></table></center>
+<span style='font-size: 1.5em; font-weight:650'>Upgrades</span><hr>
+<div class='indent0'>
+	After the initial command line git clone to install the PiKrellCam
+	distribution, subsequent upgrades to the latest version are a simple
+	one button click and
+	the OSD will inform you if there was anything upgraded.
+	<p>
+	Expand the front page
+	<span style='font-weight:700'>System</span> panel and click the
+	<span <span class='btn-control'>Upgrade</span> button.<br>
+	After an upgrade to a new version PiKrellCam should be stopped
+	and restarted from the
+	<span style='font-weight:700'>System</span> panel and the web pages
+	should be reloaded to pick up any possible web page changes.
+</div>
 
 
 <p>
-The pikrellcam program can be run from a terminal or a web browser
-or autostarted on boot if that is enabled in the install script.
-To start it from a browser, open a web browser to the Pi:
-</p>
-
-<center><table width=90% border=1><tr><td bgcolor=#c0c0b8><font size="+1">
-<pre>
-If in the install script you left the port number at the default 80:
-
-    http://your_pi
-
-or if you set a non standard port:
-
-    http://your_pi:port_number
-</pre>
-</font></td></tr></table></center><p>
-
-Open the web page System panel (click on it) and click the "Start" button.
-
-<h3>Upgrading</h3>
-After the initial command line git clone to install the PiKrellCam
-distribution, subsequent upgrades to the latest are a simple one button
-click of the Upgrade button in the System panel on the web page.
-The OSD will inform you if there was anything upgraded and if so, it's
-a good idea to reload the web page.  If there is a new binary, the OSD
-will tell you to restart the pikrellcam program.
-
-<h3>Configuration</h3>
-Read through the configuration files in ~/.pikrellcam and the files in the scripts
+<span style='font-size: 1.5em; font-weight:650'>Configuration</span><hr>
+The PiKrellCam web page has a help button in the System panel which provides
+a help page describing configuration and how pikrellcam works.  Also
+read through the configuration files in ~/.pikrellcam and the files in the scripts
 directory to get an idea of what can be configured.
 
 <h4>Configuration files in ~/.pikrellcam</h4>
@@ -279,12 +380,11 @@ directory to get an idea of what can be configured.
 </ul>
 
 
-<h3>Building From Source</h3>
 <p>
+<span style='font-size: 1.5em; font-weight:650'>Building From Source</span><hr>
 To build pikrellcam, a git clone of raspberrypi/userland is not required.
 If you modify the source, building a new pikrellcam binary is:
-</p>
-<center><table width=90% border=1><tr><td bgcolor=#c0c0b8><font size="+1">
+
 <pre>
    $ cd ~/pikrellcam/src
    $ make
@@ -297,7 +397,7 @@ and the resulting binary will be up one directory:
 
    /home/pi/pikrellcam/pikrellcam
 </pre>
-</font></td></tr></table></center><p>
+
 However, be aware that if you modify the web or C code source, you are
 effectively creating a git branch of the PiKrellCam repository and you
 will need to know about git so that you can manage that.  You need to at
@@ -305,7 +405,8 @@ least be aware that if you do the one button click upgrade from the web
 page any edits you have made to the source will be lost.  But edits you
 have made to user configuration or script files will not be lost.
 
-<h3>Internal Commands</h3>
+<p>
+<span style='font-size: 1.5em; font-weight:650'>Internal Commands</span><hr>
 Internal commands you put in the at-commands.conf file should be preceded
 by an '@' character but if echoed to the FIFO port, do not use the '@'.
 For example, here's some commands to put into the at-commands.conf if you
@@ -313,7 +414,7 @@ wanted to timelapse something that goes on only in the mornings and
 evenings on weekdays:
 
 <p>
-<center><table width=95% border=1><tr><td bgcolor=#c0c0b8><font size="+1">
+
 <pre>
 Mon  7:30  "@tl_start 30"
 Mon-Fri 7:30 "@tl_hold off"
@@ -322,7 +423,6 @@ Mon-Fri 17:00 "@tl_hold off"
 Mon-Fri 18:00 "@tl_hold on"
 Fri 18:00 "@tl_end"
 </pre>
-</font></td></tr></table></center><p>
 
 So with that you will have a timelapse running off and on all week and
 will have a video produced in the videos directory Friday night (or
@@ -331,7 +431,7 @@ Saturday morning if you are on a B+).
 Many commands are for interaction with the web page, but some
 commands likely to be useful in at-command.conf are:
 <p>
-<center><table width=95% border=1><tr><td bgcolor=#c0c0b8><font size="+1">
+
 <pre>
 record [on|off]
 record_pause
@@ -343,7 +443,7 @@ motion_enable [on|off|toggle]
 motion load_regions NAME
 motion limits magnitude_limit count_limit
 </pre>
-</font></td></tr></table></center><p>
+
 Scripts can also write commands to the FIFO and some commands are
 specific to a script.  For example the timelapse-end script sends
 inform status that it is converting a mp4 to the FIFO.  Later I
@@ -351,17 +451,18 @@ intend to add a generalized inform interface so scripts can send
 information to display on the OSD.
 
 
-<h3>PiKrellCam Files</h3>
-<center><table width=95% border=1><tr><td bgcolor=#c0c0b8><font size="+1">
+<p>
+<span style='font-size: 1.5em; font-weight:650'>PiKrellCam Files</span><hr>
+
 <pre>
 The git clone should be done in /home/pi and creates the pikrellcam distribution directory:
 
     /home/pi/pikrellcam/                    # pikrellcam install root
                         pikrellcam          # pikrellcam executable
                         src/                # pikrellcam source directory
-                        www/                # Web root set in /etc/nginx/sites-available/pikrellcam
-                        www/media           # Link to the media_dir configured in pikrellcam.conf
-                        scripts/            # User scripts for pikrellcam on event or at commands
+                        www/                # Web root in /etc/nginx/sites-available/pikrellcam
+                        www/media           # Link to media_dir configured in pikrellcam.conf
+                        scripts/            # User scripts for pikrellcam events or at commands
                         scripts-dist/       # Git managed scripts. Seeds the scripts dir
                         libkrellm/          # Local libraries needed for compiling pikrellcam
 
@@ -372,12 +473,12 @@ Running the install-pikrellcam.sh script creates or alters files:
     /etc/nginx/nginx.conf                   # Line edited to disable access_log
     /etc/nginx/sites-available/pikrellcam   # Custom config installed for pikrellcam
     /etc/nginx/sites-enabled/pikrellcam     # link to sites-available/pikrellcam
-    /etc/sudoers.d/pikrellcam               # Gives permission for pikrellcam to be run as user
-                                            #   pi by the web server which is user www-data.
-    /usr/local/bin/pikrellcam               # Link to executable /home/pi/pikrellcam/pikrellcam
+    /etc/sudoers.d/pikrellcam               # Gives permission for pikrellcam to be run as
+                                            #   user pi by the web server (user www-data).
+    /usr/local/bin/pikrellcam               # Link to /home/pi/pikrellcam/pikrellcam
 
-    /home/pi/.pikrellcam/                   # pikrellcam configuration files are created if they
-                        pikrellcam.conf     #   don't already exist
+    /home/pi/.pikrellcam/                   # pikrellcam configuration files are created if
+                        pikrellcam.conf     #   they don't already exist
                         at-commands.conf    # 
                         motion-regions.conf #
 
@@ -385,7 +486,7 @@ Running the install-pikrellcam.sh script creates or alters files:
 Running pikrellcam uses/creates these:
 (mjpeg_dir and media_dir can be changed in pikrellcam.conf)
 
-    /run/pikrellcam/                        # Default directory: mjpeg_dir for the mjpeg.jpg stream
+    /run/pikrellcam/                        # Directory for the mjpeg.jpg stream
                         mjpeg.jpg           # The stream jpeg file
     /home/pi/pikrellcam/media/              # Default directory: media_dir for media files
                         videos              # Fixed videos directory under media_dir
@@ -393,8 +494,6 @@ Running pikrellcam uses/creates these:
                         timelapse           # Fixed timelapse directory under media_dir
 
 </pre>
-</font></td></tr></table></center><p>
-
 
 </div>
   </body>
