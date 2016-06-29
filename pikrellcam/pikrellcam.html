@@ -90,6 +90,11 @@ web page interaction.
 	and event gap times.
 	</li>
   	<li>
+	Motion detect videos are saved with a corresponding thumbnail image that
+	is a snapshot crop of the moving object in the video.  So at a glance
+	you can see the cause of the motion detect (car, animal, person, etc).
+	</li>
+  	<li>
 	Built in motion start event, end event and motion preview jpeg
 	save event command execution.  Email a motion event jpeg or scp the
 	motion video to one or more off site locations.  The above image is a jpeg
@@ -97,12 +102,16 @@ web page interaction.
 	</li>
   	<li>
 	Motion detect regions of any number, size and position that are
-	real time graphically edited from the web page.  Motion region
-	configurations can be saved or loaded by name.
+	real time graphically edited from the web page.  Motion regions are
+	configured as presets or can be saved/loaded by name.
 	</li>
   	<li>
 	Real vector processing of the camera motion vectors with multiple passes
-	to get good motion detect sensitivity and noise immunity.
+	to get good motion detect sensitivity and noise immunity.  Dual motion
+	detect algorithms with configurable sensitivites operate in parallel.
+	One algorithm is tuned to detect smaller (possibly slower moving) objects
+	at a distance and the other is tuned to detect larger or very close
+	objects.
 	</li>
   	<li>
 	Command scheduling for shell scripts, FIFO commands or system commands
@@ -112,6 +121,18 @@ web page interaction.
   	<li>
 	Video record with pause function and timelapse with hold function for
 	flexible record timings that can be scheduled from the command list.
+	</li>
+  	<li>
+	Multiple settings presets which can be cycled through with single clicks
+	of a web page button.  Each setting preset can be configured with a set
+	of motion detect regions and motion detect sensitivities.
+	</li>
+  	<li>
+	Built in servo control using Pi hardware PWM GPIOs or optionally
+	ServoBlaster.  Graphical OSD configuration of servo position
+	presets, servo pan/tilt limits and servo smooth motion timings.
+	Moving between position presets is a single click web page button and
+	each position preset has its own set of multiple settings presets.
 	</li>
 	</ul>
 <p>
