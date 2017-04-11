@@ -58,8 +58,11 @@ p
 		    PiKrellCam - OSD Motion Detect Program
 		  </div>
 	</div>
+<div class='text-center'>
+<span style='font-size: 1.3em; font-weight:650'>Raspberry Pi Audio/Video Recording</span>
+</div>
 
-	<p><div class='text-center'>
+	<div class='text-center'>
 	<img src="images/email.jpg" alt="PiKrellCam Image"
 			style="width:640px; border:6px groove silver;">
 	</div>
@@ -68,11 +71,10 @@ p
 
 <p>
 <span style='font-size: 1.5em; font-weight:650'>Overview</span><hr>
-PiKrellCam is a video recording motion detect program with an OSD web
+PiKrellCam is an audio/video recording motion detect program with an OSD web
 interface that detects motion using the Raspberry Pi camera motion vectors.
-While the idea for PiKrellCam came from Silvan Melchior's RaspiMJPEG,
-the PiKrellCam program is a structural redesign and a rather
-different approach to the web interface.
+Audio can be optionally recorded if a USB sound card + microphone is connected.
+
 PiKrellCam's architecture is built around full featured internal motion
 detection without any dependence on an external motion detect program
 and it centralizes built in functionality for simplified
@@ -83,6 +85,7 @@ web page interaction.
   	<li>
 	Camera mjpeg streaming to a web displaying OSD user interface.
 	Text, graphics and motion vectors are overlay drawn on the mjpeg stream.
+	Audio can also be streamed but currently may not work in all browsers.
 	</li>
   	<li>
 	Pi camera MMAL motion vector detection and motion video recording with
