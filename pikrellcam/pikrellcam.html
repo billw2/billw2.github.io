@@ -261,13 +261,13 @@ Go to the PiKrellCam web page in your browser (omit the port number if it was le
         and PiKrellCam is now operating with its default settings.
     </li>
     <li>Wait for motion to be detected and watch the OSD for the video record progress.<br>
-        After the video ends, view it by going to the Thumbs (or Videos) page by clicking:
-        <span style='font-weight:700'>Media:</span> <span class='btn-control'>Thumbs</span>
+        After the video ends, view it by going to the Videos page by clicking:
+        <span style='font-weight:700'>Media:</span> <span class='btn-control'>Videos</span>
     </li>
-    <li>On the button bar, click the buttons
+    <li>Back on the main web page you can click the buttons
         <span style='font-weight:700'>Show:</span>
+        <span class='btn-control'>Preset</span>
         <span class='btn-control'>Timelapse</span>
-        <span class='btn-control'>Regions</span>
         <span class='btn-control'>Vectors</span>
         <br>to toggle showing information PiKrellCam can display on the OSD.
         This information shows real time motion detection information and gives a feel
@@ -277,11 +277,12 @@ Go to the PiKrellCam web page in your browser (omit the port number if it was le
         each time PiKrellCam is started.  To do this, use the OSD menu system:<br>
         <ul>
             <li>
-            Expand the <span style='font-weight:700'>Setup</span> panel.
+            Expand the <span style='font-weight:700'>Setup</span> panel
+			by clicking on it.
             </li>
             <li>In the
-            <span style='font-weight:700'>Motion</span> group,
-            click the button <span class='btn-control'>Settings</span>
+            <span style='font-weight:700'>Config</span> group,
+            click the button <span class='btn-control'>Motion</span>
             </li>
             <li>The OSD will show a horizontal menu with
             <span style='font-weight:700'>Startup_Motion</span> highlighted (underlined).
@@ -303,7 +304,7 @@ Go to the PiKrellCam web page in your browser (omit the port number if it was le
         <span style='font-weight:700'>System</span> panel
         click the
         <span class='btn-control'>Help</span> button for a description of
-		how pikrellcam works and how to configure it.
+		how pikrellcam works and much more information on how to configure it.
 	</li>
 </div>
 
@@ -318,7 +319,7 @@ Go to the PiKrellCam web page in your browser (omit the port number if it was le
 	<p>
 	Expand the front page
 	<span style='font-weight:700'>System</span> panel and click the
-	<span <span class='btn-control'>Upgrade</span> button.<br>
+	<span class='btn-control'>Upgrade</span> button.<br>
 	After an upgrade to a new version PiKrellCam should be stopped
 	and restarted from the
 	<span style='font-weight:700'>System</span> panel and the web pages
@@ -374,11 +375,10 @@ directory to get an idea of what can be configured.
 	is in a tmpfs, it will not be mounted.
 	</li>
 	<li>
-	If you want motion detect videos immediately archived to another machine
-	you can edit scripts/motion-end and have pikrellcam scp the videos to
-	anywhere.  To enable scp copying, put your machine information into the
-	script and enable the on_motion_end command in pikrellcam.conf.
-	 But read the warning about ssh authentication.
+	If you want motion detect videos archived to another machine, you
+	can setup a NFS mount on the Pi running Pikrellcam so that clicking the
+	<span class='btn-control'>NFS Archive</span> button on the Videos page
+	will save the video on a NFS mounted machine.<br>
 	</li>
 	<li>
 	In the ~/.pikrellcam/at-commands.conf file add any commands
