@@ -1,0 +1,123 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
+<html>
+<head>
+	<title>GKrellM</title>
+</head>
+<body background="paper1.gif">
+
+<h1>GKrellMSS</h1>
+<h2>GKrellM Sound Scope</h2>
+
+<hr>
+
+<table>
+	<tr>
+		<td>
+		<img src="gkrellmss.png" alt="gkrellmss.png"
+			border="0" align="top"><br>
+<p>
+		<img src="gkrellmss1.png" alt="gkrellmss1.png"
+			border="0" align="top"><br>
+		</td>
+		<td>
+		<blockquote>
+		<h3>About</h3>
+		<blockquote>
+		GKrellMSS is a plugin for
+		<a href="http://www.gkrellm.net" name="www.gkrellm.net">
+		GKrellM</a>
+		that monitors an audio data stream from an ALSA sound card
+		or an Esound (esd) sound server.  The sound source may be
+		toggled from a chart popup <b>Options menu</b>.  There is a VU meter
+		and a sound chart that can toggle between an oscilloscope and
+		spectrum analyzer mode.  There is a sensitivity adjustment.
+		<p>
+		</blockquote>
+
+		<h3>Requirements</h3>
+		<blockquote>
+		<p>
+		GKrellMSS requires: &nbsp GKrellM2, gtk 2.0, gdk 2.0, glib 2.0
+			and either fftw3 or fftw2.
+		<br>
+		Get the
+		<a href="http://www.fftw.org/" name="www.fftw.org/"> fftw </a>
+		source or locate Debian/Redhat packages from the
+		<a href="http://www.fftw.org/download.html"
+		name="www.fftw.org/download.html"> fftw download </a> page.
+
+		<p>
+		The default will compile in support for 
+		<a href="http://www.tux.org/~ricdude/EsounD.html"
+		name="www.tux.org/~ricdude/EsounD.html"> Esound, </a>
+		and ALSA (probably version >= 0.9.7) as long as Esound and ALSA
+		development packages are installed.
+		</blockquote>
+
+		<h3>ALSA Monitoring</h3>
+		<blockquote>
+		The Capture device must be available and this means that GKrellMSS
+		cannot monitor ALSA when other programs such as Audacity
+		have the Capture device open for recording.  When you want to run
+		such programs, just toggle off using
+		ALSA as the GKrellMSS sound source via the chart <b>Options menu</b>
+		button.
+		<p>
+		The ALSA Capture mixer settings must also be turned on.  Some
+		initial ALSA installs (or even simple upgrades) can leave Capture
+		off, so if you don't get any ALSA Sound Scope activity, check your
+		Capture settings with:
+		<pre>
+    $ amixer get Capture
+and
+    $ amixer get Mix
+		</pre>
+		The last two lines of output indicate if Capture is on or off.
+		Make sure both the <b>Capture</b> and <b>Mix</b> mixer controls
+		have Capture set on with:
+		<pre>
+    $ amixer set Capture cap
+    $ amixer set Mix cap
+		</pre>
+		Some cards may not have these mixer controls and for those
+		you will have to look at the mixer controls available (run
+		the amixer command without any arguments) to find a control
+		with capture content that will work.
+		For example, you might need to turn capture on for
+		the <b>PCM</b> control:
+		<pre>
+    $ amixer set PCM cap
+		</pre>
+		</blockquote>
+
+		<h3>GKrellMSS 2.7</h3>
+		  <ul>
+			<dl>
+				<a href="gkrellmss-2.7.tar.gz"
+				name="tar file">gkrellmss-2.7.tar.gz </a>
+			</dl>
+		  </ul>
+		</blockquote>
+		</td>
+	</tr>
+</table>
+
+<p>
+The screenshots show GKrellMSS in spectrum analyzer mode and in
+oscilloscope  mode on top of the
+<a href="http://gkrellm.luon.net/volume.phtml"> Volume</a>
+and the
+<a href="http://gkrellm.luon.net/gkrellmms.phtml"> GKrellMMS</a>
+plugins.
+
+<hr>
+	<address>
+	<p align=center>
+	GKrellMSS is <b>free</b> software released under the GNU General Public License.<br>
+	Feel free to email me with questions or suggestions.<br>
+	Bill Wilson <A HREF="mailto:bill--at--gkrellm.net">bill--at--gkrellm.net</A><br>
+	</p>
+	</address>
+
+</body>
+</html>
